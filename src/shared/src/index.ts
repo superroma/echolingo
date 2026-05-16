@@ -13,4 +13,5 @@ export { MockTtsEngine } from './tts/mock-engine.js';
 export type { LlmEngine } from './llm/interface.js';
 export { MockLlmEngine } from './llm/mock-engine.js';
 export type { MockLlmEngineOptions } from './llm/mock-engine.js';
+export type { ScriptGenJob, TtsSentenceJob, Job } from './jobs.js';
 export * from './types.js';
