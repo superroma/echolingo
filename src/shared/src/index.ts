@@ -14,4 +14,6 @@ export type { LlmEngine } from './llm/interface.js';
 export { MockLlmEngine } from './llm/mock-engine.js';
 export type { MockLlmEngineOptions } from './llm/mock-engine.js';
 export type { ScriptGenJob, TtsSentenceJob, Job } from './jobs.js';
+export type { LessonRepository } from './storage/lesson-repository.js';
+export { InMemoryLessonRepository } from './storage/in-memory-lesson-repository.js';
 export * from './types.js';
