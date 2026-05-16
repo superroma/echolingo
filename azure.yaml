@@ -1,0 +1,13 @@
+name: echolingo
+metadata:
+  template: echolingo@0.0.1
+services:
+  web:
+    project: ./src/web
+    language: ts
+    host: staticwebapp
+    dist: out
+  api:
+    project: ./src/api
+    language: ts
+    host: function
