@@ -22,7 +22,7 @@
 ├── .editorconfig
 ├── .gitignore                       # extended
 ├── .prettierrc.json
-├── .eslintrc.cjs
+├── eslint.config.js
 ├── docker-compose.yml               # Azurite
 ├── README.md                        # extended with dev setup
 ├── .github/
@@ -89,7 +89,7 @@
 - Create: `.editorconfig`
 - Modify: `.gitignore`
 - Create: `.prettierrc.json`
-- Create: `.eslintrc.cjs`
+- Create: `eslint.config.js`
 
 - [ ] **Step 1: Write root `package.json`**
 
@@ -111,16 +111,17 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
-    "dev:web": "npm run dev --workspace src/web",
-    "dev:api": "npm run start --workspace src/api",
+    "dev:web": "npm run dev --workspace @echolingo/web",
+    "dev:api": "npm run start --workspace @echolingo/api",
     "azurite": "docker compose up -d azurite"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.14.0",
-    "@typescript-eslint/parser": "^8.14.0",
+    "@eslint/js": "^9.14.0",
     "eslint": "^9.14.0",
+    "globals": "^15.12.0",
     "prettier": "^3.3.3",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.14.0"
   }
 }
 ```
@@ -204,17 +205,27 @@ out/
 }
 ```
 
-- [ ] **Step 7: Write `.eslintrc.cjs`**
+- [ ] **Step 7: Write `eslint.config.js`**
 
 ```js
-module.exports = {
-  root: true,
-  parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
-  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
-  env: { node: true, es2022: true, browser: true },
-  ignorePatterns: ['dist/', '.next/', 'out/', 'node_modules/'],
-};
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import globals from 'globals';
+
+export default [
+  {
+    ignores: ['**/dist/**', '**/.next/**', '**/out/**', '**/node_modules/**'],
+  },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
+];
 ```
 
 - [ ] **Step 8: Install root devDependencies**
@@ -230,7 +241,7 @@ Expected: `package-lock.json` created, no workspace errors (workspaces are empty
 - [ ] **Step 9: Commit**
 
 ```bash
-git add package.json package-lock.json tsconfig.base.json .nvmrc .editorconfig .gitignore .prettierrc.json .eslintrc.cjs
+git add package.json package-lock.json tsconfig.base.json .nvmrc .editorconfig .gitignore .prettierrc.json eslint.config.js
 git commit -m "chore: initialize npm workspaces monorepo"
 ```
 
