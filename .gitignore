@@ -14,3 +14,20 @@ build/
 .idea/
 coverage/
 .turbo/
+
+# tooling
+*.tsbuildinfo
+.turbo/
+
+# Azure / azd
+.azure/
+azurite-data/
+
+# Functions
+local.settings.json
+bin/
+obj/
+
+# next
+.next/
+out/
