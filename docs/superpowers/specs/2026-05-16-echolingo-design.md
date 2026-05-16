@@ -93,19 +93,23 @@ No login. Lessons are addressable by a deterministic URL derived from their para
 - OpenAI, ElevenLabs, and Google TTS keys live in **Azure Key Vault**.
 - Functions access Key Vault via **managed identity**. No keys in env files or code.
 
-### Repo layout (pnpm workspaces)
+### Repo layout (npm workspaces, `azd` conventions)
 
 ```
-apps/web         Next.js PWA
-apps/api         Azure Functions (HTTP + queue triggers)
-packages/shared  types, prompts, sentence parser, TTS interface
+azure.yaml       azd service map (web + api)
 infra/           Bicep templates
+src/
+  web/           @echolingo/web    — Next.js 15 PWA (static export)
+  api/           @echolingo/api    — Azure Functions v4 (HTTP + queue triggers)
+  shared/        @echolingo/shared — types, prompts, sentence parser, TTS interface
+docker-compose.yml  Azurite (local Storage/Queue emulator)
 ```
 
-### IaC
+### IaC & deploy
 
-- **Bicep** (`infra/main.bicep`) provisions: Static Web App, Cosmos DB, Storage account (blob + queue), Web PubSub, Key Vault, Application Insights.
-- One template per environment (`dev`, `prod`). No state file — Bicep is declarative against ARM.
+- **`azd`** drives provisioning + deploy from `azure.yaml`. Each service (`web`, `api`) points to its host (Static Web App, Function App).
+- **Bicep** (`infra/main.bicep` + modules) provisions: Static Web App, Function App, Cosmos DB, Storage account (blob + queue), Web PubSub, Key Vault, Application Insights.
+- One environment per `azd` env (e.g., `dev`, `prod`). No external state file — Bicep is declarative against ARM.
 
 ## Generation flow
 
