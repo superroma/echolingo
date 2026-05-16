@@ -23,7 +23,6 @@
 ├── .gitignore                       # extended
 ├── .prettierrc.json
 ├── eslint.config.js
-├── docker-compose.yml               # Azurite
 ├── README.md                        # extended with dev setup
 ├── .github/
 │   └── workflows/
@@ -113,10 +112,11 @@
     "build": "npm run build --workspaces --if-present",
     "dev:web": "npm run dev --workspace @echolingo/web",
     "dev:api": "npm run start --workspace @echolingo/api",
-    "azurite": "docker compose up -d azurite"
+    "azurite": "azurite --location ./azurite-data --silent"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
+    "azurite": "^3.32.0",
     "eslint": "^9.14.0",
     "globals": "^15.12.0",
     "prettier": "^3.3.3",
@@ -1617,68 +1617,49 @@ git commit -m "feat(web): scaffold Next.js 15 PWA with Tailwind and static expor
 
 ---
 
-## Task 11: Add Azurite local emulator (docker-compose)
+## Task 11: Add Azurite local emulator (npm devDependency)
 
 **Files:**
-- Create: `docker-compose.yml`
+- Modify: `package.json` (add `azurite` to `devDependencies`; update the `azurite` script)
 
-- [ ] **Step 1: Write `docker-compose.yml`**
+Azurite is a Node.js process, so we install it as a regular dev dependency rather than running it under Docker. Same UX (`npm run azurite`), one fewer system dependency.
 
-```yaml
-services:
-  azurite:
-    image: mcr.microsoft.com/azure-storage/azurite:latest
-    container_name: echolingo-azurite
-    command: >
-      azurite
-      --blobHost 0.0.0.0
-      --queueHost 0.0.0.0
-      --tableHost 0.0.0.0
-      --location /data
-      --silent
-    ports:
-      - '10000:10000'
-      - '10001:10001'
-      - '10002:10002'
-    volumes:
-      - ./azurite-data:/data
-```
+- [ ] **Step 1: Update root `package.json`**
 
-- [ ] **Step 2: Start Azurite**
+In `package.json`:
+- Add `"azurite": "^3.32.0"` to `devDependencies` (alphabetically, after `@eslint/js`).
+- Change the `azurite` script from `"docker compose up -d azurite"` to `"azurite --location ./azurite-data --silent"`.
+
+- [ ] **Step 2: Install**
 
 Run:
 
 ```bash
-docker compose up -d azurite
+npm install
 ```
 
-Expected: container `echolingo-azurite` is created and reports "running".
+Expected: `azurite` is added to `package-lock.json`; no install errors.
 
-- [ ] **Step 3: Smoke-test Azurite is reachable**
+- [ ] **Step 3: Smoke-test Azurite boots and is reachable**
 
 Run:
 
 ```bash
+npm run azurite &
+AZURITE_PID=$!
+sleep 3
 curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:10000/devstoreaccount1
+kill $AZURITE_PID
+wait $AZURITE_PID 2>/dev/null
 ```
 
-Expected: `400` (Azurite returns 400 for the unauthenticated root request; any HTTP response confirms it's up).
+Expected: `400` (Azurite returns 400 for the unauthenticated root request; any HTTP response confirms it's up). The `azurite-data/` directory may be created by Azurite — leave it; it is already in `.gitignore`.
 
-- [ ] **Step 4: Stop Azurite**
-
-Run:
+- [ ] **Step 4: Commit**
 
 ```bash
-docker compose down
-```
-
-Expected: container removed cleanly.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add docker-compose.yml
-git commit -m "chore: add Azurite docker-compose for local Storage/Queue emulator"
+git add package.json package-lock.json
+git commit -m "chore: add Azurite as npm devDependency for local Storage/Queue emulator"
 ```
 
 ---
@@ -1843,14 +1824,14 @@ src/
   shared/          @echolingo/shared — domain types, prompts, parsers, TTS interface
   web/             @echolingo/web    — Next.js 15 PWA (static export)
   api/             @echolingo/api    — Azure Functions v4 (Node 20 TS)
-docker-compose.yml Azurite (local Storage/Queue emulator)
 ```
+
+Azurite (local Storage/Queue emulator) is installed as an npm devDependency; run it with `npm run azurite`.
 
 ## Prerequisites
 
 - Node 20 (`nvm use`)
 - npm 10+
-- Docker (for Azurite)
 - Azure Functions Core Tools v4: `npm install -g azure-functions-core-tools@4 --unsafe-perm true`
 - (Plan 5) `azd` CLI: https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd
 
@@ -1865,8 +1846,8 @@ npm install
 In three terminals:
 
 ```bash
-# 1. Storage emulator
-docker compose up -d azurite
+# 1. Storage emulator (foreground; Ctrl+C to stop)
+npm run azurite
 
 # 2. Backend
 npm run dev:api          # starts Azure Functions on http://localhost:7071
@@ -1921,7 +1902,7 @@ Expected: every step exits 0.
 In separate terminals:
 
 ```bash
-docker compose up -d azurite
+npm run azurite
 npm run dev:api
 npm run dev:web
 ```
@@ -1940,9 +1921,7 @@ Expected: both URLs respond. Azurite is up on ports 10000/10001/10002.
 
 - [ ] **Step 3: Tear down**
 
-```bash
-docker compose down
-```
+Stop each terminal process (Ctrl+C in the Azurite/dev:api/dev:web terminals).
 
 ---
 
