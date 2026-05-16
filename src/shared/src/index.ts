@@ -10,4 +10,7 @@ export type {
   TtsSynthesizeResult,
 } from './tts/interface.js';
 export { MockTtsEngine } from './tts/mock-engine.js';
+export type { LlmEngine } from './llm/interface.js';
+export { MockLlmEngine } from './llm/mock-engine.js';
+export type { MockLlmEngineOptions } from './llm/mock-engine.js';
 export * from './types.js';
