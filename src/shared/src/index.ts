@@ -20,4 +20,5 @@ export type { AudioLang, AudioStorage } from './storage/audio-storage.js';
 export { InMemoryAudioStorage } from './storage/in-memory-audio-storage.js';
 export { retryWithBackoff } from './util/retry.js';
 export type { RetryOptions } from './util/retry.js';
+export { estimateMp3DurationSec } from './util/duration.js';
 export * from './types.js';
