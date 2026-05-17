@@ -14,10 +14,12 @@
     "@azure/functions": "^4.5.1",
     "@azure/storage-blob": "^12.25.0",
     "@azure/storage-queue": "^12.24.0",
-    "@echolingo/shared": "*"
+    "@echolingo/shared": "*",
+    "openai": "^4.68.0"
   },
   "devDependencies": {
     "@types/node": "^20.16.10",
+    "msw": "^2.6.0",
     "vitest": "^2.1.4"
   }
 }
