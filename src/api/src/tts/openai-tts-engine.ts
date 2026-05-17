@@ -1,0 +1,65 @@
+import OpenAI, { APIError } from 'openai';
+import {
+  estimateMp3DurationSec,
+  retryWithBackoff,
+  type TtsEngine,
+  type TtsLang,
+  type TtsSynthesizeRequest,
+  type TtsSynthesizeResult,
+} from '@echolingo/shared';
+
+export interface OpenAiTtsEngineOptions {
+  apiKey: string;
+  model?: string;
+  defaultVoices?: Partial<Record<TtsLang, string>>;
+  maxAttempts?: number;
+  baseDelayMs?: number;
+}
+
+const DEFAULT_MODEL = 'tts-1';
+const DEFAULT_VOICES: Record<TtsLang, string> = {
+  el: 'alloy',
+  en: 'alloy',
+  ru: 'alloy',
+};
+
+function isRetriable(err: unknown): boolean {
+  if (err instanceof APIError) {
+    if (err.status === 429) return true;
+    return err.status >= 500;
+  }
+  return true;
+}
+
+export class OpenAiTtsEngine implements TtsEngine {
+  readonly name = 'openai' as const;
+  private readonly client: OpenAI;
+  private readonly model: string;
+  private readonly defaultVoices: Record<TtsLang, string>;
+  private readonly maxAttempts: number;
+  private readonly baseDelayMs: number;
+
+  constructor(opts: OpenAiTtsEngineOptions) {
+    this.client = new OpenAI({ apiKey: opts.apiKey });
+    this.model = opts.model ?? DEFAULT_MODEL;
+    this.defaultVoices = { ...DEFAULT_VOICES, ...opts.defaultVoices };
+    this.maxAttempts = opts.maxAttempts ?? 3;
+    this.baseDelayMs = opts.baseDelayMs ?? 500;
+  }
+
+  async synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
+    const voice = req.voice ?? this.defaultVoices[req.lang];
+    const response = await retryWithBackoff(
+      () =>
+        this.client.audio.speech.create({
+          model: this.model,
+          voice,
+          input: req.text,
+          response_format: 'mp3',
+        }),
+      { maxAttempts: this.maxAttempts, baseDelayMs: this.baseDelayMs, isRetriable },
+    );
+    const mp3 = Buffer.from(await response.arrayBuffer());
+    return { mp3, durationSec: estimateMp3DurationSec(req.text) };
+  }
+}
