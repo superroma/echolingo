@@ -6,6 +6,7 @@ import {
 } from '@echolingo/shared';
 import { BlobLessonRepository } from '../src/storage/blob-lesson-repository.js';
 import { BlobAudioStorage } from '../src/storage/blob-audio-storage.js';
+import { BlobRateLimitStore } from '../src/storage/blob-rate-limit-store.js';
 import { QueueClient } from '../src/queue/queue-client.js';
 import { setContextForTests, type ApiContext } from '../src/context.js';
 import { lessonCreateHandler } from '../src/functions/lesson-create.js';
@@ -94,6 +95,7 @@ describe('pipeline end-to-end (integration)', () => {
     await Promise.all([
       resetContainer(connStr, LESSONS),
       resetContainer(connStr, AUDIO),
+      resetContainer(connStr, 'rate-limits-it-15'),
       resetQueue(connStr, SCRIPT_Q),
       resetQueue(connStr, TTS_Q),
     ]);
@@ -114,6 +116,7 @@ describe('pipeline end-to-end (integration)', () => {
       queue: new QueueClient(connStr, SCRIPT_Q, TTS_Q),
       llm: new MockLlmEngine({ script: CANNED }),
       tts: new MockTtsEngine(),
+      rateLimits: new BlobRateLimitStore(connStr, 'rate-limits-it-15'),
     };
     setContextForTests(ctx);
   });

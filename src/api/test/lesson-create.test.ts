@@ -42,6 +42,7 @@ function buildContext(): { ctx: ApiContext; queue: FakeQueueClient } {
     queue: queue as unknown as ApiContext['queue'],
     llm: new MockLlmEngine(),
     tts: new MockTtsEngine(),
+    rateLimits: { get: async () => 0, increment: async () => 1 },
   };
   return { ctx, queue };
 }

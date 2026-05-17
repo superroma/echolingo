@@ -55,6 +55,7 @@ function buildContext(opts: { llmScript?: string; llmThrows?: boolean } = {}): {
     queue: queue as unknown as ApiContext['queue'],
     llm,
     tts: new MockTtsEngine(),
+    rateLimits: { get: async () => 0, increment: async () => 1 },
   };
   return { ctx, queue };
 }

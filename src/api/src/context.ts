@@ -9,9 +9,15 @@ import {
 import { loadConfig, type Config } from './config.js';
 import { BlobLessonRepository } from './storage/blob-lesson-repository.js';
 import { BlobAudioStorage } from './storage/blob-audio-storage.js';
+import { BlobRateLimitStore } from './storage/blob-rate-limit-store.js';
 import { QueueClient } from './queue/queue-client.js';
 import { OpenAiLlmEngine } from './llm/openai-llm-engine.js';
 import { OpenAiTtsEngine } from './tts/openai-tts-engine.js';
+
+export interface RateLimitStore {
+  get(ip: string, date: string): Promise<number>;
+  increment(ip: string, date: string): Promise<number>;
+}
 
 export interface ApiContext {
   config: Config;
@@ -20,6 +26,7 @@ export interface ApiContext {
   queue: QueueClient;
   llm: LlmEngine;
   tts: TtsEngine;
+  rateLimits: RateLimitStore;
 }
 
 let cached: ApiContext | undefined;
@@ -54,6 +61,7 @@ export function getContext(): ApiContext {
     ),
     llm: buildLlm(config),
     tts: buildTts(config),
+    rateLimits: new BlobRateLimitStore(config.storageConnectionString, config.rateLimitContainer),
   };
   return cached;
 }
