@@ -34,6 +34,10 @@ export async function scriptGenWorker(job: ScriptGenJob): Promise<void> {
         }),
       ),
     );
+    ctx.telemetry.emit({
+      name: 'lesson.script_ready',
+      properties: { lessonId: job.lessonId, totalSentences: sentences.length },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await ctx.lessons.update(job.lessonId, (l) => ({
@@ -42,6 +46,10 @@ export async function scriptGenWorker(job: ScriptGenJob): Promise<void> {
       error: message,
       updatedAt: new Date().toISOString(),
     }));
+    ctx.telemetry.emit({
+      name: 'lesson.failed',
+      properties: { lessonId: job.lessonId, stage: 'script_gen', error: message },
+    });
     throw err;
   }
 }

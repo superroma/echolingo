@@ -117,6 +117,7 @@ describe('pipeline end-to-end (integration)', () => {
       llm: new MockLlmEngine({ script: CANNED }),
       tts: new MockTtsEngine(),
       rateLimits: new BlobRateLimitStore(connStr, 'rate-limits-it-15'),
+      telemetry: { emit: () => {} },
     };
     setContextForTests(ctx);
   });

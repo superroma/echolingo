@@ -56,6 +56,7 @@ function buildContext(opts: { llmScript?: string; llmThrows?: boolean } = {}): {
     llm,
     tts: new MockTtsEngine(),
     rateLimits: { get: async () => 0, increment: async () => 1 },
+    telemetry: { emit: () => {} },
   };
   return { ctx, queue };
 }

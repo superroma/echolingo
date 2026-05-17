@@ -36,6 +36,7 @@ export async function lessonCreateHandler(req: HttpRequest): Promise<HttpRespons
   // Cache-hit fast path (does not consume rate limit)
   const existing = await ctx.lessons.get(id);
   if (existing) {
+    ctx.telemetry.emit({ name: 'lesson.cache_hit', properties: { lessonId: id } });
     return json(200, { id, status: existing.status });
   }
 
@@ -45,6 +46,7 @@ export async function lessonCreateHandler(req: HttpRequest): Promise<HttpRespons
   const limit = ctx.config.rateLimitPerDay;
   const used = await ctx.rateLimits.get(ip, date);
   if (used >= limit) {
+    ctx.telemetry.emit({ name: 'lesson.rate_limited', properties: { ip, used, limit } });
     return json(429, { limit, used, resetAt: tomorrowUtc() });
   }
   await ctx.rateLimits.increment(ip, date);
@@ -65,6 +67,10 @@ export async function lessonCreateHandler(req: HttpRequest): Promise<HttpRespons
   const wasFresh = persisted.createdAt === fresh.createdAt;
   if (wasFresh) {
     await ctx.queue.enqueueScriptGen({ type: 'scriptGen', lessonId: id });
+    ctx.telemetry.emit({
+      name: 'lesson.created',
+      properties: { lessonId: id, llmEngine: ctx.config.llmEngine, ttsEngine: ctx.config.ttsEngine },
+    });
     return json(201, { id, status: persisted.status });
   }
   return json(200, { id, status: persisted.status });

@@ -34,6 +34,7 @@ function buildContext(): ApiContext {
     llm: new MockLlmEngine(),
     tts: new MockTtsEngine(),
     rateLimits: { get: async () => 0, increment: async () => 1 },
+    telemetry: { emit: () => {} },
   };
 }
 

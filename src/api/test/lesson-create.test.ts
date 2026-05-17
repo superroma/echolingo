@@ -43,6 +43,7 @@ function buildContext(): { ctx: ApiContext; queue: FakeQueueClient } {
     llm: new MockLlmEngine(),
     tts: new MockTtsEngine(),
     rateLimits: { get: async () => 0, increment: async () => 1 },
+    telemetry: { emit: () => {} },
   };
   return { ctx, queue };
 }

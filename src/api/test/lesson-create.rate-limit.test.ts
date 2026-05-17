@@ -53,6 +53,7 @@ function buildContext(limit: number): { ctx: ApiContext; rates: CountingRateLimi
     llm: new MockLlmEngine(),
     tts: new MockTtsEngine(),
     rateLimits: rates,
+    telemetry: { emit: () => {} },
   };
   return { ctx, rates };
 }

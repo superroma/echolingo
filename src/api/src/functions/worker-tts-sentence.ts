@@ -48,6 +48,14 @@ export async function ttsSentenceWorker(job: TtsSentenceJob): Promise<void> {
       updatedAt: new Date().toISOString(),
     };
   });
+
+  const lessonAfter = await ctx.lessons.get(job.lessonId);
+  if (lessonAfter?.status === 'ready') {
+    ctx.telemetry.emit({
+      name: 'lesson.audio_ready',
+      properties: { lessonId: job.lessonId, totalSentences: lessonAfter.totalSentences },
+    });
+  }
 }
 
 app.storageQueue('ttsSentenceWorker', {

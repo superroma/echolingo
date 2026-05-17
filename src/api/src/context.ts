@@ -13,6 +13,7 @@ import { BlobRateLimitStore } from './storage/blob-rate-limit-store.js';
 import { QueueClient } from './queue/queue-client.js';
 import { OpenAiLlmEngine } from './llm/openai-llm-engine.js';
 import { OpenAiTtsEngine } from './tts/openai-tts-engine.js';
+import { createTelemetry, type Telemetry } from './lib/telemetry.js';
 
 export interface RateLimitStore {
   get(ip: string, date: string): Promise<number>;
@@ -27,6 +28,7 @@ export interface ApiContext {
   llm: LlmEngine;
   tts: TtsEngine;
   rateLimits: RateLimitStore;
+  telemetry: Telemetry;
 }
 
 let cached: ApiContext | undefined;
@@ -62,6 +64,7 @@ export function getContext(): ApiContext {
     llm: buildLlm(config),
     tts: buildTts(config),
     rateLimits: new BlobRateLimitStore(config.storageConnectionString, config.rateLimitContainer),
+    telemetry: createTelemetry({ connectionString: config.appInsightsConnectionString }),
   };
   return cached;
 }
