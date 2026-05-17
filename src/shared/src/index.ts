@@ -18,4 +18,6 @@ export type { LessonRepository } from './storage/lesson-repository.js';
 export { InMemoryLessonRepository } from './storage/in-memory-lesson-repository.js';
 export type { AudioLang, AudioStorage } from './storage/audio-storage.js';
 export { InMemoryAudioStorage } from './storage/in-memory-audio-storage.js';
+export { retryWithBackoff } from './util/retry.js';
+export type { RetryOptions } from './util/retry.js';
 export * from './types.js';
