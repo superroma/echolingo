@@ -16,6 +16,15 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: Start Azurite
+        run: |
+          mkdir -p azurite-data
+          npx azurite --location ./azurite-data --silent --skipApiVersionCheck &
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:10000/devstoreaccount1 || true)
+            if [ "$code" = "400" ]; then break; fi
+            sleep 1
+          done
       - run: npm run lint
       - run: npm run test
       - run: npm run build --workspace @echolingo/web
