@@ -1,5 +1,6 @@
 import './functions/health.js';
 import './functions/lesson-create.js';
 import './functions/lesson-get.js';
+import './functions/lesson-download.js';
 import './functions/worker-script-gen.js';
 import './functions/worker-tts-sentence.js';
