@@ -18,7 +18,7 @@
     "build": "npm run build --workspaces --if-present",
     "dev:web": "npm run dev --workspace @echolingo/web",
     "dev:api": "npm run start --workspace @echolingo/api",
-    "azurite": "azurite --location ./azurite-data --silent"
+    "azurite": "azurite --location ./azurite-data --silent --skipApiVersionCheck"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
