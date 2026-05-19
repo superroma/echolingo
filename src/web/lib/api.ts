@@ -1,4 +1,4 @@
-import type { Lesson, LessonParams } from '@echolingo/shared';
+import type { Lesson, LessonParams } from '@echolingo/shared/types';
 
 export type CreateLessonResult =
   | { kind: 'created'; id: string; status: string }

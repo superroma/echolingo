@@ -13,7 +13,7 @@ import {
   type LessonMode,
   type LessonStyle,
   type NativeLang,
-} from '@echolingo/shared';
+} from '@echolingo/shared/types';
 
 export interface FormPrefs {
   topic: string;
