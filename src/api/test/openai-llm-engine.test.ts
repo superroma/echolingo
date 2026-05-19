@@ -25,7 +25,10 @@ const prompt = buildPrompt({
 
 describe('OpenAiLlmEngine', () => {
   it('reports its name as openai', () => {
-    expect(new OpenAiLlmEngine({ apiKey: 'sk-test' }).name).toBe('openai');
+    expect(
+      new OpenAiLlmEngine({ auth: { kind: 'direct', apiKey: 'sk-test' }, model: 'gpt-4o-mini' })
+        .name,
+    ).toBe('openai');
   });
 
   it('sends a chat completion request and returns the assistant content', async () => {
@@ -45,7 +48,10 @@ describe('OpenAiLlmEngine', () => {
         });
       }),
     );
-    const engine = new OpenAiLlmEngine({ apiKey: 'sk-test', model: 'gpt-4o-mini' });
+    const engine = new OpenAiLlmEngine({
+      auth: { kind: 'direct', apiKey: 'sk-test' },
+      model: 'gpt-4o-mini',
+    });
     const raw = await engine.generateScript(prompt);
     expect(raw).toBe(CANNED);
     expect(captured.body?.model).toBe('gpt-4o-mini');
@@ -67,7 +73,12 @@ describe('OpenAiLlmEngine', () => {
         });
       }),
     );
-    const engine = new OpenAiLlmEngine({ apiKey: 'sk-test', maxAttempts: 5, baseDelayMs: 1 });
+    const engine = new OpenAiLlmEngine({
+      auth: { kind: 'direct', apiKey: 'sk-test' },
+      model: 'gpt-4o-mini',
+      maxAttempts: 5,
+      baseDelayMs: 1,
+    });
     expect(await engine.generateScript(prompt)).toBe(CANNED);
     expect(calls).toBe(3);
   });
@@ -83,7 +94,12 @@ describe('OpenAiLlmEngine', () => {
         });
       }),
     );
-    const engine = new OpenAiLlmEngine({ apiKey: 'sk-test', maxAttempts: 5, baseDelayMs: 1 });
+    const engine = new OpenAiLlmEngine({
+      auth: { kind: 'direct', apiKey: 'sk-test' },
+      model: 'gpt-4o-mini',
+      maxAttempts: 5,
+      baseDelayMs: 1,
+    });
     await expect(engine.generateScript(prompt)).rejects.toThrow();
     expect(calls).toBe(1);
   });
@@ -94,7 +110,10 @@ describe('OpenAiLlmEngine', () => {
         HttpResponse.json({ id: 'cmpl-3', choices: [{ index: 0, finish_reason: 'stop' }] }),
       ),
     );
-    const engine = new OpenAiLlmEngine({ apiKey: 'sk-test' });
+    const engine = new OpenAiLlmEngine({
+      auth: { kind: 'direct', apiKey: 'sk-test' },
+      model: 'gpt-4o-mini',
+    });
     await expect(engine.generateScript(prompt)).rejects.toThrow(/empty/i);
   });
 });

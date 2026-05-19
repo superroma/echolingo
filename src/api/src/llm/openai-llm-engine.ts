@@ -1,15 +1,17 @@
-import OpenAI, { APIError } from 'openai';
+import OpenAI, { AzureOpenAI, APIError } from 'openai';
 import { retryWithBackoff, type BuiltPrompt, type LlmEngine } from '@echolingo/shared';
 
+export type OpenAiLlmEngineAuth =
+  | { kind: 'direct'; apiKey: string }
+  | { kind: 'azure'; endpoint: string; apiVersion: string; azureADTokenProvider: () => Promise<string> };
+
 export interface OpenAiLlmEngineOptions {
-  apiKey: string;
-  model?: string;
+  auth: OpenAiLlmEngineAuth;
+  model: string;
   maxAttempts?: number;
   baseDelayMs?: number;
   temperature?: number;
 }
-
-const DEFAULT_MODEL = 'gpt-4o-mini';
 
 function isRetriable(err: unknown): boolean {
   if (err instanceof APIError) {
@@ -21,18 +23,26 @@ function isRetriable(err: unknown): boolean {
 
 export class OpenAiLlmEngine implements LlmEngine {
   readonly name = 'openai' as const;
-  private readonly client: OpenAI;
+  private readonly client: OpenAI | AzureOpenAI;
   private readonly model: string;
   private readonly maxAttempts: number;
   private readonly baseDelayMs: number;
   private readonly temperature: number;
 
   constructor(opts: OpenAiLlmEngineOptions) {
-    this.client = new OpenAI({ apiKey: opts.apiKey });
-    this.model = opts.model ?? DEFAULT_MODEL;
+    this.model = opts.model;
     this.maxAttempts = opts.maxAttempts ?? 3;
     this.baseDelayMs = opts.baseDelayMs ?? 500;
     this.temperature = opts.temperature ?? 0.7;
+    if (opts.auth.kind === 'direct') {
+      this.client = new OpenAI({ apiKey: opts.auth.apiKey });
+    } else {
+      this.client = new AzureOpenAI({
+        endpoint: opts.auth.endpoint,
+        apiVersion: opts.auth.apiVersion,
+        azureADTokenProvider: opts.auth.azureADTokenProvider,
+      });
+    }
   }
 
   async generateScript(prompt: BuiltPrompt): Promise<string> {

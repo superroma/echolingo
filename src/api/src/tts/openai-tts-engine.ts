@@ -1,4 +1,4 @@
-import OpenAI, { APIError } from 'openai';
+import OpenAI, { AzureOpenAI, APIError } from 'openai';
 import {
   estimateMp3DurationSec,
   retryWithBackoff,
@@ -8,15 +8,18 @@ import {
   type TtsSynthesizeResult,
 } from '@echolingo/shared';
 
+export type OpenAiTtsEngineAuth =
+  | { kind: 'direct'; apiKey: string }
+  | { kind: 'azure'; endpoint: string; apiVersion: string; azureADTokenProvider: () => Promise<string> };
+
 export interface OpenAiTtsEngineOptions {
-  apiKey: string;
-  model?: string;
+  auth: OpenAiTtsEngineAuth;
+  model: string;
   defaultVoices?: Partial<Record<TtsLang, string>>;
   maxAttempts?: number;
   baseDelayMs?: number;
 }
 
-const DEFAULT_MODEL = 'tts-1';
 const DEFAULT_VOICES: Record<TtsLang, string> = {
   el: 'alloy',
   en: 'alloy',
@@ -33,18 +36,26 @@ function isRetriable(err: unknown): boolean {
 
 export class OpenAiTtsEngine implements TtsEngine {
   readonly name = 'openai' as const;
-  private readonly client: OpenAI;
+  private readonly client: OpenAI | AzureOpenAI;
   private readonly model: string;
   private readonly defaultVoices: Record<TtsLang, string>;
   private readonly maxAttempts: number;
   private readonly baseDelayMs: number;
 
   constructor(opts: OpenAiTtsEngineOptions) {
-    this.client = new OpenAI({ apiKey: opts.apiKey });
-    this.model = opts.model ?? DEFAULT_MODEL;
+    this.model = opts.model;
     this.defaultVoices = { ...DEFAULT_VOICES, ...opts.defaultVoices };
     this.maxAttempts = opts.maxAttempts ?? 3;
     this.baseDelayMs = opts.baseDelayMs ?? 500;
+    if (opts.auth.kind === 'direct') {
+      this.client = new OpenAI({ apiKey: opts.auth.apiKey });
+    } else {
+      this.client = new AzureOpenAI({
+        endpoint: opts.auth.endpoint,
+        apiVersion: opts.auth.apiVersion,
+        azureADTokenProvider: opts.auth.azureADTokenProvider,
+      });
+    }
   }
 
   async synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {

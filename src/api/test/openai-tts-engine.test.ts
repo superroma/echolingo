@@ -12,7 +12,9 @@ const MP3 = Buffer.from('MOCK-MP3-BYTES');
 
 describe('OpenAiTtsEngine', () => {
   it('reports its name as openai', () => {
-    expect(new OpenAiTtsEngine({ apiKey: 'sk-test' }).name).toBe('openai');
+    expect(
+      new OpenAiTtsEngine({ auth: { kind: 'direct', apiKey: 'sk-test' }, model: 'tts-1' }).name,
+    ).toBe('openai');
   });
 
   it('POSTs to /v1/audio/speech and returns mp3 bytes with estimated duration', async () => {
@@ -26,7 +28,10 @@ describe('OpenAiTtsEngine', () => {
         });
       }),
     );
-    const engine = new OpenAiTtsEngine({ apiKey: 'sk-test' });
+    const engine = new OpenAiTtsEngine({
+      auth: { kind: 'direct', apiKey: 'sk-test' },
+      model: 'tts-1',
+    });
     const result = await engine.synthesize({ text: 'Καλημέρα.', lang: 'el' });
     expect(result.mp3.equals(MP3)).toBe(true);
     expect(result.durationSec).toBeGreaterThan(0);
@@ -42,7 +47,10 @@ describe('OpenAiTtsEngine', () => {
         return new HttpResponse(MP3, { status: 200 });
       }),
     );
-    const engine = new OpenAiTtsEngine({ apiKey: 'sk-test' });
+    const engine = new OpenAiTtsEngine({
+      auth: { kind: 'direct', apiKey: 'sk-test' },
+      model: 'tts-1',
+    });
     await engine.synthesize({ text: 'Hi', lang: 'en' });
     expect(captured.body?.voice).toBeDefined();
     await engine.synthesize({ text: 'Hi', lang: 'en', voice: 'shimmer' });
@@ -58,7 +66,12 @@ describe('OpenAiTtsEngine', () => {
         return new HttpResponse(MP3, { status: 200 });
       }),
     );
-    const engine = new OpenAiTtsEngine({ apiKey: 'sk-test', maxAttempts: 3, baseDelayMs: 1 });
+    const engine = new OpenAiTtsEngine({
+      auth: { kind: 'direct', apiKey: 'sk-test' },
+      model: 'tts-1',
+      maxAttempts: 3,
+      baseDelayMs: 1,
+    });
     const result = await engine.synthesize({ text: 'x', lang: 'el' });
     expect(result.mp3.equals(MP3)).toBe(true);
     expect(calls).toBe(2);
@@ -72,7 +85,12 @@ describe('OpenAiTtsEngine', () => {
         return new HttpResponse('bad', { status: 400 });
       }),
     );
-    const engine = new OpenAiTtsEngine({ apiKey: 'sk-test', maxAttempts: 3, baseDelayMs: 1 });
+    const engine = new OpenAiTtsEngine({
+      auth: { kind: 'direct', apiKey: 'sk-test' },
+      model: 'tts-1',
+      maxAttempts: 3,
+      baseDelayMs: 1,
+    });
     await expect(engine.synthesize({ text: 'x', lang: 'el' })).rejects.toThrow();
     expect(calls).toBe(1);
   });

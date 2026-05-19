@@ -36,7 +36,10 @@ let cached: ApiContext | undefined;
 function buildLlm(config: Config): LlmEngine {
   if (config.llmEngine === 'openai') {
     if (!config.openai) throw new Error('openai config missing');
-    return new OpenAiLlmEngine({ apiKey: config.openai.apiKey, model: config.openai.llmModel });
+    return new OpenAiLlmEngine({
+      auth: { kind: 'direct', apiKey: config.openai.apiKey },
+      model: config.openai.llmModel,
+    });
   }
   return new MockLlmEngine();
 }
@@ -44,7 +47,10 @@ function buildLlm(config: Config): LlmEngine {
 function buildTts(config: Config): TtsEngine {
   if (config.ttsEngine === 'openai') {
     if (!config.openai) throw new Error('openai config missing');
-    return new OpenAiTtsEngine({ apiKey: config.openai.apiKey, model: config.openai.ttsModel });
+    return new OpenAiTtsEngine({
+      auth: { kind: 'direct', apiKey: config.openai.apiKey },
+      model: config.openai.ttsModel,
+    });
   }
   return new MockTtsEngine();
 }
