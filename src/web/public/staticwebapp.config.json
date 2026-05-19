@@ -1,0 +1,22 @@
+{
+  "routes": [
+    {
+      "route": "/lesson/*",
+      "rewrite": "/lesson/shell/index.html"
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/_next/*", "/api/*", "/*.{ico,png,jpg,svg,webmanifest,js,css,mp3}"]
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  },
+  "responseOverrides": {
+    "404": { "rewrite": "/index.html" }
+  },
+  "mimeTypes": {
+    ".webmanifest": "application/manifest+json"
+  }
+}
