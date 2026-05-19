@@ -3,6 +3,11 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "environmentName": { "value": "${AZURE_ENV_NAME}" },
-    "location": { "value": "${AZURE_LOCATION}" }
+    "location": { "value": "${AZURE_LOCATION}" },
+    "openAiLocation": { "value": "${AZURE_OPENAI_LOCATION=westeurope}" },
+    "principalId": { "value": "${AZURE_PRINCIPAL_ID}" },
+    "llmModelName": { "value": "${LLM_MODEL_NAME=gpt-5.4-mini}" },
+    "ttsModelName": { "value": "${TTS_MODEL_NAME=tts}" },
+    "deploymentQuotaTpm": { "value": "${DEPLOYMENT_QUOTA_TPM=150}" }
   }
 }
