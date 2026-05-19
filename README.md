@@ -84,6 +84,24 @@ Per-IP daily quota enforced on `POST /api/lesson`. Cache hits (deterministic id 
 
 `POST /api/lesson/{id}/download` returns `{ url }` pointing at a concatenated MP3 of the full lesson (respecting `mode` + `bilingualOrder`). Cached after first build via `lesson.fullMp3Url`.
 
+## Frontend (Plan 3)
+
+The PWA lives at `src/web` (Next.js 15 app router, static export). In dev the Next.js server rewrites `/api/*` to `http://localhost:7071`; in production Azure Static Web Apps' linked-Functions feature handles the same path.
+
+Pages:
+- `/` — lesson form, prefs auto-fill from localStorage.
+- `/lesson/[id]/` — polls the backend; once `status:"ready"` shows the audio player + transcript with sentence highlight. Speed slider (0.75× / 1× / 1.25×), prev/next sentence, repeat current sentence, MediaSession lockscreen controls.
+
+```bash
+npm run azurite   # in one terminal
+npm run dev:api   # in another (http://localhost:7071)
+npm run dev:web   # in another (http://localhost:3000)
+```
+
+### Static-export deploy notes (for Plan 5)
+
+The `/lesson/[id]/` route is emitted as a single static shell at `/lesson/shell/index.html`. To make `/lesson/<real-id>/` requests resolve in production, the Azure Static Web Apps `staticwebapp.config.json` must rewrite that path to the shell. Plan 5 adds the file.
+
 ## Status
 
-Plans 1, 2, 4 complete. Backend generates real Greek lessons end-to-end with OpenAI (when `OPENAI_API_KEY` is set) and falls back to mocks otherwise. Frontend (Plan 3) and Azure deploy (Plan 5) are next.
+Plans 1, 2, 3, 4 complete. Echolingo is end-to-end usable locally: open `http://localhost:3000`, fill the form, listen to a real OpenAI-generated Greek lesson with synchronized transcript and lockscreen controls. Azure deploy (Plan 5) is next.
