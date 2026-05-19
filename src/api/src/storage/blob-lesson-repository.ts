@@ -1,14 +1,34 @@
 import { BlobServiceClient, RestError, type ContainerClient } from '@azure/storage-blob';
+import { DefaultAzureCredential } from '@azure/identity';
 import type { Lesson, LessonRepository } from '@echolingo/shared';
 
 const BLOB_NAME_SUFFIX = '.json';
 
+export interface BlobLessonRepositoryOptions {
+  containerName: string;
+  connectionString?: string;
+  endpoint?: string;
+}
+
 export class BlobLessonRepository implements LessonRepository {
   private readonly container: ContainerClient;
 
-  constructor(connectionString: string, containerName: string) {
-    const service = BlobServiceClient.fromConnectionString(connectionString);
-    this.container = service.getContainerClient(containerName);
+  constructor(connStringOrOpts: string | BlobLessonRepositoryOptions, containerName?: string) {
+    let opts: BlobLessonRepositoryOptions;
+    if (typeof connStringOrOpts === 'string') {
+      opts = { connectionString: connStringOrOpts, containerName: containerName! };
+    } else {
+      opts = connStringOrOpts;
+    }
+    let service: BlobServiceClient;
+    if (opts.connectionString) {
+      service = BlobServiceClient.fromConnectionString(opts.connectionString);
+    } else if (opts.endpoint) {
+      service = new BlobServiceClient(opts.endpoint, new DefaultAzureCredential());
+    } else {
+      throw new Error('BlobLessonRepository requires connectionString or endpoint');
+    }
+    this.container = service.getContainerClient(opts.containerName);
   }
 
   async ensureContainer(): Promise<void> {

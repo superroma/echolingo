@@ -2,16 +2,45 @@ import {
   QueueServiceClient,
   type QueueClient as AzureQueueClient,
 } from '@azure/storage-queue';
+import { DefaultAzureCredential } from '@azure/identity';
 import type { ScriptGenJob, TtsSentenceJob } from '@echolingo/shared';
+
+export interface QueueClientOptions {
+  scriptGenQueue: string;
+  ttsSentenceQueue: string;
+  connectionString?: string;
+  endpoint?: string;
+}
 
 export class QueueClient {
   private readonly scriptGen: AzureQueueClient;
   private readonly ttsSentence: AzureQueueClient;
 
-  constructor(connectionString: string, scriptGenQueue: string, ttsSentenceQueue: string) {
-    const service = QueueServiceClient.fromConnectionString(connectionString);
-    this.scriptGen = service.getQueueClient(scriptGenQueue);
-    this.ttsSentence = service.getQueueClient(ttsSentenceQueue);
+  constructor(
+    connStringOrOpts: string | QueueClientOptions,
+    scriptGenQueue?: string,
+    ttsSentenceQueue?: string,
+  ) {
+    let opts: QueueClientOptions;
+    if (typeof connStringOrOpts === 'string') {
+      opts = {
+        connectionString: connStringOrOpts,
+        scriptGenQueue: scriptGenQueue!,
+        ttsSentenceQueue: ttsSentenceQueue!,
+      };
+    } else {
+      opts = connStringOrOpts;
+    }
+    let service: QueueServiceClient;
+    if (opts.connectionString) {
+      service = QueueServiceClient.fromConnectionString(opts.connectionString);
+    } else if (opts.endpoint) {
+      service = new QueueServiceClient(opts.endpoint, new DefaultAzureCredential());
+    } else {
+      throw new Error('QueueClient requires connectionString or endpoint');
+    }
+    this.scriptGen = service.getQueueClient(opts.scriptGenQueue);
+    this.ttsSentence = service.getQueueClient(opts.ttsSentenceQueue);
   }
 
   async ensureQueues(): Promise<void> {
