@@ -1,13 +1,26 @@
 name: echolingo
 metadata:
-  template: echolingo@0.0.1
+  template: echolingo@0.1.0
 services:
+  api:
+    project: ./src/api
+    language: ts
+    host: function
+    dist: dist
+    hooks:
+      prepackage:
+        shell: sh
+        run: |
+          cd ../shared && npm run build
+          cd ../api && npm run build
   web:
     project: ./src/web
     language: ts
     host: staticwebapp
     dist: out
-  api:
-    project: ./src/api
-    language: ts
-    host: function
+    hooks:
+      prepackage:
+        shell: sh
+        run: |
+          cd ../shared && npm run build
+          cd ../web && npm run build
