@@ -134,6 +134,32 @@ export function usePlayer(playlist: PlaylistEntry[]): {
     setSpeedState(rate);
   }, []);
 
+  // MediaSession integration (lockscreen / Now-Playing controls)
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+    const ms = navigator.mediaSession;
+    const entry = playlist[currentChunk];
+    if (!entry) {
+      ms.metadata = null;
+      return;
+    }
+    ms.metadata = new MediaMetadata({
+      title: `Sentence ${entry.sentenceIndex + 1}`,
+      artist: 'Echolingo',
+      album: 'Greek lesson',
+    });
+    ms.setActionHandler('play', () => play());
+    ms.setActionHandler('pause', () => pause());
+    ms.setActionHandler('nexttrack', () => next());
+    ms.setActionHandler('previoustrack', () => prev());
+    return () => {
+      ms.setActionHandler('play', null);
+      ms.setActionHandler('pause', null);
+      ms.setActionHandler('nexttrack', null);
+      ms.setActionHandler('previoustrack', null);
+    };
+  }, [currentChunk, playlist, play, pause, next, prev]);
+
   return {
     audioRef,
     state: { isPlaying, currentChunk, currentSentence, speed },
