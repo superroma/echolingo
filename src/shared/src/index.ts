@@ -21,4 +21,6 @@ export { InMemoryAudioStorage } from './storage/in-memory-audio-storage.js';
 export { retryWithBackoff } from './util/retry.js';
 export type { RetryOptions } from './util/retry.js';
 export { estimateMp3DurationSec } from './util/duration.js';
+export { buildPlaylist } from './playlist.js';
+export type { PlaylistEntry } from './playlist.js';
 export * from './types.js';
