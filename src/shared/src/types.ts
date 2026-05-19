@@ -1,3 +1,5 @@
+export type { PlaylistEntry } from './playlist.js';
+
 export const LESSON_LENGTHS = [5, 10, 20, 30] as const;
 export type LessonLength = (typeof LESSON_LENGTHS)[number];
 
