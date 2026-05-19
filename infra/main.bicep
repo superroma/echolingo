@@ -18,8 +18,14 @@ param principalId string = ''
 @description('Azure OpenAI LLM model name (deployment name will match).')
 param llmModelName string = 'gpt-5.4-mini'
 
+@description('Azure OpenAI LLM model version snapshot.')
+param llmModelVersion string = '2024-07-18'
+
 @description('Azure OpenAI TTS model name (deployment name will match).')
 param ttsModelName string = 'tts'
+
+@description('Azure OpenAI TTS model version snapshot.')
+param ttsModelVersion string = '001'
 
 @description('Quota in thousand tokens per minute for each deployment.')
 param deploymentQuotaTpm int = 150
@@ -65,7 +71,9 @@ module openai './modules/openai.bicep' = {
     location: openAiLocation
     tags: tags
     llmModelName: llmModelName
+    llmModelVersion: llmModelVersion
     ttsModelName: ttsModelName
+    ttsModelVersion: ttsModelVersion
     quotaTpm: deploymentQuotaTpm
     principalId: principalId
   }
