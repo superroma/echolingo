@@ -1,8 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState, type RefObject } from 'react';
 import { useLesson } from '../../../hooks/use-lesson';
+import { usePlayer } from '../../../hooks/use-player';
 import { LessonProgress } from '../../../components/lesson-progress';
+import { PlayerControlsView } from '../../../components/player-controls';
+import { TranscriptView } from '../../../components/transcript-view';
+import { buildPlaylist } from '@echolingo/shared/playlist';
 
 function readIdFromPath(): string {
   if (typeof window === 'undefined') return '';
@@ -23,6 +27,11 @@ export function LessonClient() {
 
 function LessonScreen({ id }: { id: string }) {
   const state = useLesson(id);
+  const playlist = useMemo(
+    () => (state.kind === 'ok' && state.lesson.status === 'ready' ? buildPlaylist(state.lesson) : []),
+    [state],
+  );
+  const player = usePlayer(playlist);
 
   if (state.kind === 'loading') {
     return <main className="mx-auto max-w-md px-4 py-8 text-neutral-600">Loading…</main>;
@@ -38,14 +47,19 @@ function LessonScreen({ id }: { id: string }) {
     );
   }
 
+  const { lesson } = state;
+  const ready = lesson.status === 'ready';
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-      <h1 className="text-2xl font-semibold">{state.lesson.params.topic}</h1>
-      <LessonProgress lesson={state.lesson} />
-      {state.lesson.status === 'ready' && (
-        <p className="text-sm text-neutral-500">
-          Lesson is ready. Player UI lands in Task 8.
-        </p>
+      <h1 className="text-2xl font-semibold">{lesson.params.topic}</h1>
+      {!ready && <LessonProgress lesson={lesson} />}
+      {ready && (
+        <>
+          <audio ref={player.audioRef as RefObject<HTMLAudioElement>} preload="auto" />
+          <PlayerControlsView state={player.state} controls={player.controls} />
+          <TranscriptView lesson={lesson} currentSentence={player.state.currentSentence} />
+        </>
       )}
     </main>
   );
