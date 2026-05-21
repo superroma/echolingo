@@ -98,10 +98,65 @@ npm run dev:api   # in another (http://localhost:7071)
 npm run dev:web   # in another (http://localhost:3000)
 ```
 
-### Static-export deploy notes (for Plan 5)
+### Static-export deploy notes
 
-The `/lesson/[id]/` route is emitted as a single static shell at `/lesson/shell/index.html`. To make `/lesson/<real-id>/` requests resolve in production, the Azure Static Web Apps `staticwebapp.config.json` must rewrite that path to the shell. Plan 5 adds the file.
+The `/lesson/[id]/` route is emitted as a single static shell at `/lesson/shell/index.html`. `src/web/public/staticwebapp.config.json` rewrites any `/lesson/<id>/` request to that shell, which then reads the actual id from `window.location.pathname` at runtime.
+
+## Deploy (Plan 5)
+
+Echolingo provisions and deploys through `azd`. Infra is composed of Azure Verified Modules; the Function App uses **Flex Consumption** on Node 22 with a system-assigned managed identity (SAMI). The SAMI gets `Storage Blob/Queue/Table Data Contributor` on the storage account and `Cognitive Services OpenAI User` on the Azure OpenAI resource — no API keys are stored anywhere.
+
+### First-time setup
+
+```bash
+# Authenticate (one-time)
+azd auth login
+az login
+
+# Create env (one-time)
+azd env new prod
+azd env set AZURE_LOCATION westeurope
+azd env set AZURE_OPENAI_LOCATION westeurope
+
+# Provision + deploy
+azd up
+```
+
+`azd up` will:
+1. Provision the resource group, monitoring, storage, Azure OpenAI (with `gpt-5.4-mini` + `tts` GlobalStandard deployments at 150K TPM), Function App, and Static Web App.
+2. Build the shared package, then the Function App TS source, package as a Flex Consumption zip, and upload to the `deploymentpackage` blob container.
+3. Build the Next.js static export and upload to the Static Web App.
+4. Print the public URL.
+
+### Model availability fallback
+
+If `gpt-5.4-mini` isn't available in your tenant/region, override at deploy time:
+
+```bash
+azd env set LLM_MODEL_NAME gpt-4o-mini
+azd env set LLM_MODEL_VERSION 2024-07-18
+azd provision
+```
+
+### CI deploys (GitHub Actions OIDC)
+
+One-time:
+
+```bash
+azd pipeline config --provider github
+```
+
+This registers federated credentials and adds the required secrets/vars to the repo. Pushes to `main` then trigger `.github/workflows/deploy.yml`, which runs `azd up --no-prompt`.
+
+### Verification
+
+```bash
+curl https://func-echolingo-prod.azurewebsites.net/api/health
+curl -X POST $(azd env get-values | grep WEB_URL | cut -d= -f2- | tr -d '"')/api/lesson \
+  -H 'content-type: application/json' \
+  -d '{"topic":"at the bakery","lengthMin":5,"level":3,"style":"dialogue","mode":"bilingual","bilingualOrder":"gr_first","nativeLang":"en","ttsEngine":"openai"}'
+```
 
 ## Status
 
-Plans 1, 2, 3, 4 complete. Echolingo is end-to-end usable locally: open `http://localhost:3000`, fill the form, listen to a real OpenAI-generated Greek lesson with synchronized transcript and lockscreen controls. Azure deploy (Plan 5) is next.
+All plans (1, 2, 3, 4, 5) complete. Echolingo runs locally and deploys to Azure with one `azd up`. Production auth is exclusively SAMI; local dev uses `az login` via `DefaultAzureCredential`. No API keys live in env or code.
