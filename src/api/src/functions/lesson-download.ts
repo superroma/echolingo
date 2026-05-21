@@ -2,6 +2,8 @@ import { app, type HttpRequest, type HttpResponseInit } from '@azure/functions';
 import { getContext } from '../context.js';
 import { concatMp3 } from '../lib/concat-mp3.js';
 import { BlobServiceClient } from '@azure/storage-blob';
+import { DefaultAzureCredential } from '@azure/identity';
+import type { Config } from '../config.js';
 
 const FULL_BLOB_NAME = 'full.mp3';
 
@@ -37,8 +39,7 @@ export async function lessonDownloadHandler(req: HttpRequest): Promise<HttpRespo
 
   const fullMp3 = concatMp3(parts);
   const fullUrl = await uploadFullBlob(
-    ctx.config.storageConnectionString,
-    ctx.config.audioContainer,
+    ctx.config,
     id,
     fullMp3,
   );
@@ -55,12 +56,19 @@ export async function lessonDownloadHandler(req: HttpRequest): Promise<HttpRespo
 }
 
 async function uploadFullBlob(
-  connStr: string,
-  container: string,
+  config: Config,
   lessonId: string,
   data: Buffer,
 ): Promise<string> {
-  const service = BlobServiceClient.fromConnectionString(connStr);
+  const container = config.audioContainer;
+  let service: BlobServiceClient;
+  if (config.blobEndpoint) {
+    service = new BlobServiceClient(config.blobEndpoint, new DefaultAzureCredential());
+  } else if (config.storageConnectionString) {
+    service = BlobServiceClient.fromConnectionString(config.storageConnectionString);
+  } else {
+    throw new Error('uploadFullBlob requires blobEndpoint or storageConnectionString');
+  }
   const containerClient = service.getContainerClient(container);
   await containerClient.createIfNotExists();
   const blob = containerClient.getBlockBlobClient(`${lessonId}/${FULL_BLOB_NAME}`);

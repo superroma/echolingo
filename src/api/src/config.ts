@@ -7,19 +7,35 @@ export const DEFAULT_TTS_SENTENCE_QUEUE = 'tts-sentence';
 export type LlmEngineName = 'mock' | 'openai';
 export type TtsEngineName = 'mock' | 'openai';
 
-export interface OpenAiConfig {
+export interface OpenAiDirectConfig {
+  kind: 'direct';
   apiKey: string;
   llmModel: string;
   ttsModel: string;
 }
 
-export interface Config {
-  storageConnectionString: string;
+export interface OpenAiAzureConfig {
+  kind: 'azure';
+  endpoint: string;
+  apiVersion: string;
+  llmDeployment: string;
+  ttsDeployment: string;
+}
+
+export type OpenAiConfig = OpenAiDirectConfig | OpenAiAzureConfig;
+
+export interface StorageConfig {
+  storageConnectionString?: string;
+  blobEndpoint?: string;
+  queueEndpoint?: string;
   lessonsContainer: string;
   audioContainer: string;
   rateLimitContainer: string;
   scriptGenQueue: string;
   ttsSentenceQueue: string;
+}
+
+export interface Config extends StorageConfig {
   llmEngine: LlmEngineName;
   ttsEngine: TtsEngineName;
   rateLimitPerDay: number;
@@ -28,39 +44,64 @@ export interface Config {
 }
 
 export function loadConfig(): Config {
-  const storageConnectionString = process.env.AzureWebJobsStorage;
-  if (!storageConnectionString) {
-    throw new Error('AzureWebJobsStorage environment variable is required');
+  const useAzureStorage =
+    !!process.env.STORAGE_BLOB_ENDPOINT || !!process.env.AzureWebJobsStorage__accountName;
+
+  if (!useAzureStorage && !process.env.AzureWebJobsStorage) {
+    throw new Error('AzureWebJobsStorage or STORAGE_BLOB_ENDPOINT environment variable is required');
   }
 
+  const accountName = process.env.AzureWebJobsStorage__accountName;
+  const blobEndpoint =
+    process.env.STORAGE_BLOB_ENDPOINT ??
+    (accountName ? `https://${accountName}.blob.core.windows.net` : undefined);
+  const queueEndpoint =
+    process.env.STORAGE_QUEUE_ENDPOINT ??
+    (accountName ? `https://${accountName}.queue.core.windows.net` : undefined);
+
   const openaiKey = process.env.OPENAI_API_KEY;
+  const azureOpenAiEndpoint = process.env.AZURE_OPENAI_ENDPOINT;
   const llmEnvChoice = process.env.LLM_ENGINE;
   const ttsEnvChoice = process.env.TTS_ENGINE;
+
+  const hasOpenAi = !!openaiKey || !!azureOpenAiEndpoint;
 
   const llmEngine: LlmEngineName =
     llmEnvChoice === 'mock' ? 'mock' :
     llmEnvChoice === 'openai' ? 'openai' :
-    openaiKey ? 'openai' : 'mock';
+    hasOpenAi ? 'openai' : 'mock';
 
   const ttsEngine: TtsEngineName =
     ttsEnvChoice === 'mock' ? 'mock' :
     ttsEnvChoice === 'openai' ? 'openai' :
-    openaiKey ? 'openai' : 'mock';
+    hasOpenAi ? 'openai' : 'mock';
 
-  if ((llmEngine === 'openai' || ttsEngine === 'openai') && !openaiKey) {
-    throw new Error('OPENAI_API_KEY is required when LLM_ENGINE or TTS_ENGINE is openai');
+  if ((llmEngine === 'openai' || ttsEngine === 'openai') && !hasOpenAi) {
+    throw new Error('OPENAI_API_KEY or AZURE_OPENAI_ENDPOINT is required when LLM_ENGINE or TTS_ENGINE is openai');
   }
 
-  const openai: OpenAiConfig | undefined = openaiKey
-    ? {
-        apiKey: openaiKey,
-        llmModel: process.env.OPENAI_LLM_MODEL ?? 'gpt-4o-mini',
-        ttsModel: process.env.OPENAI_TTS_MODEL ?? 'tts-1',
-      }
-    : undefined;
+  let openai: OpenAiConfig | undefined;
+  if (azureOpenAiEndpoint) {
+    openai = {
+      kind: 'azure',
+      endpoint: azureOpenAiEndpoint,
+      apiVersion: process.env.AZURE_OPENAI_API_VERSION ?? '2024-10-21',
+      llmDeployment: process.env.AZURE_OPENAI_LLM_DEPLOYMENT ?? 'gpt-5.4-mini',
+      ttsDeployment: process.env.AZURE_OPENAI_TTS_DEPLOYMENT ?? 'tts',
+    };
+  } else if (openaiKey) {
+    openai = {
+      kind: 'direct',
+      apiKey: openaiKey,
+      llmModel: process.env.OPENAI_LLM_MODEL ?? 'gpt-4o-mini',
+      ttsModel: process.env.OPENAI_TTS_MODEL ?? 'tts-1',
+    };
+  }
 
   return {
-    storageConnectionString,
+    storageConnectionString: useAzureStorage ? undefined : process.env.AzureWebJobsStorage,
+    blobEndpoint,
+    queueEndpoint,
     lessonsContainer: process.env.LESSONS_CONTAINER ?? DEFAULT_LESSON_CONTAINER,
     audioContainer: process.env.AUDIO_CONTAINER ?? DEFAULT_AUDIO_CONTAINER,
     rateLimitContainer: process.env.RATE_LIMIT_CONTAINER ?? DEFAULT_RATE_LIMIT_CONTAINER,

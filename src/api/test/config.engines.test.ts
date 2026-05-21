@@ -32,9 +32,12 @@ describe('loadConfig — engine selection', () => {
     process.env.OPENAI_LLM_MODEL = 'gpt-4o-mini';
     process.env.OPENAI_TTS_MODEL = 'tts-1';
     const cfg = loadConfig();
-    expect(cfg.openai?.apiKey).toBe('sk-x');
-    expect(cfg.openai?.llmModel).toBe('gpt-4o-mini');
-    expect(cfg.openai?.ttsModel).toBe('tts-1');
+    expect(cfg.openai?.kind).toBe('direct');
+    if (cfg.openai?.kind === 'direct') {
+      expect(cfg.openai.apiKey).toBe('sk-x');
+      expect(cfg.openai.llmModel).toBe('gpt-4o-mini');
+      expect(cfg.openai.ttsModel).toBe('tts-1');
+    }
   });
 
   it('defaults ttsEngine to mock when no provider env is set', () => {
@@ -65,5 +68,27 @@ describe('loadConfig — engine selection', () => {
     expect(loadConfig().appInsightsConnectionString).toBeUndefined();
     process.env.APPLICATIONINSIGHTS_CONNECTION_STRING = 'InstrumentationKey=test';
     expect(loadConfig().appInsightsConnectionString).toBe('InstrumentationKey=test');
+  });
+
+  it('detects Azure OpenAI from AZURE_OPENAI_ENDPOINT', () => {
+    process.env.AZURE_OPENAI_ENDPOINT = 'https://aoai-test.openai.azure.com';
+    const cfg = loadConfig();
+    expect(cfg.llmEngine).toBe('openai');
+    expect(cfg.ttsEngine).toBe('openai');
+    expect(cfg.openai?.kind).toBe('azure');
+    if (cfg.openai?.kind === 'azure') {
+      expect(cfg.openai.endpoint).toBe('https://aoai-test.openai.azure.com');
+      expect(cfg.openai.llmDeployment).toBe('gpt-5.4-mini');
+      expect(cfg.openai.ttsDeployment).toBe('tts');
+    }
+  });
+
+  it('uses identity-based storage when AzureWebJobsStorage__accountName is set', () => {
+    process.env.AzureWebJobsStorage__accountName = 'stechol';
+    delete process.env.AzureWebJobsStorage;
+    const cfg = loadConfig();
+    expect(cfg.blobEndpoint).toBe('https://stechol.blob.core.windows.net');
+    expect(cfg.queueEndpoint).toBe('https://stechol.queue.core.windows.net');
+    expect(cfg.storageConnectionString).toBeUndefined();
   });
 });

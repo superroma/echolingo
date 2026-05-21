@@ -6,6 +6,7 @@ import {
   type LlmEngine,
   type TtsEngine,
 } from '@echolingo/shared';
+import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity';
 import { loadConfig, type Config } from './config.js';
 import { BlobLessonRepository } from './storage/blob-lesson-repository.js';
 import { BlobAudioStorage } from './storage/blob-audio-storage.js';
@@ -32,27 +33,108 @@ export interface ApiContext {
 }
 
 let cached: ApiContext | undefined;
+let cachedTokenProvider: (() => Promise<string>) | undefined;
+
+function azureTokenProvider(): () => Promise<string> {
+  if (!cachedTokenProvider) {
+    cachedTokenProvider = getBearerTokenProvider(
+      new DefaultAzureCredential(),
+      'https://cognitiveservices.azure.com/.default',
+    );
+  }
+  return cachedTokenProvider;
+}
 
 function buildLlm(config: Config): LlmEngine {
-  if (config.llmEngine === 'openai') {
-    if (!config.openai) throw new Error('openai config missing');
+  if (config.llmEngine !== 'openai' || !config.openai) return new MockLlmEngine();
+  if (config.openai.kind === 'azure') {
     return new OpenAiLlmEngine({
-      auth: { kind: 'direct', apiKey: config.openai.apiKey },
-      model: config.openai.llmModel,
+      auth: {
+        kind: 'azure',
+        endpoint: config.openai.endpoint,
+        apiVersion: config.openai.apiVersion,
+        azureADTokenProvider: azureTokenProvider(),
+      },
+      model: config.openai.llmDeployment,
     });
   }
-  return new MockLlmEngine();
+  return new OpenAiLlmEngine({
+    auth: { kind: 'direct', apiKey: config.openai.apiKey },
+    model: config.openai.llmModel,
+  });
 }
 
 function buildTts(config: Config): TtsEngine {
-  if (config.ttsEngine === 'openai') {
-    if (!config.openai) throw new Error('openai config missing');
+  if (config.ttsEngine !== 'openai' || !config.openai) return new MockTtsEngine();
+  if (config.openai.kind === 'azure') {
     return new OpenAiTtsEngine({
-      auth: { kind: 'direct', apiKey: config.openai.apiKey },
-      model: config.openai.ttsModel,
+      auth: {
+        kind: 'azure',
+        endpoint: config.openai.endpoint,
+        apiVersion: config.openai.apiVersion,
+        azureADTokenProvider: azureTokenProvider(),
+      },
+      model: config.openai.ttsDeployment,
     });
   }
-  return new MockTtsEngine();
+  return new OpenAiTtsEngine({
+    auth: { kind: 'direct', apiKey: config.openai.apiKey },
+    model: config.openai.ttsModel,
+  });
+}
+
+function buildLessons(config: Config): LessonRepository {
+  if (config.blobEndpoint) {
+    return new BlobLessonRepository({
+      endpoint: config.blobEndpoint,
+      containerName: config.lessonsContainer,
+    });
+  }
+  return new BlobLessonRepository({
+    connectionString: config.storageConnectionString!,
+    containerName: config.lessonsContainer,
+  });
+}
+
+function buildAudio(config: Config): AudioStorage {
+  if (config.blobEndpoint) {
+    return new BlobAudioStorage({
+      endpoint: config.blobEndpoint,
+      containerName: config.audioContainer,
+    });
+  }
+  return new BlobAudioStorage({
+    connectionString: config.storageConnectionString!,
+    containerName: config.audioContainer,
+  });
+}
+
+function buildRateLimits(config: Config): RateLimitStore {
+  if (config.blobEndpoint) {
+    return new BlobRateLimitStore({
+      endpoint: config.blobEndpoint,
+      containerName: config.rateLimitContainer,
+    });
+  }
+  return new BlobRateLimitStore({
+    connectionString: config.storageConnectionString!,
+    containerName: config.rateLimitContainer,
+  });
+}
+
+function buildQueue(config: Config): QueueClient {
+  if (config.queueEndpoint) {
+    return new QueueClient({
+      endpoint: config.queueEndpoint,
+      scriptGenQueue: config.scriptGenQueue,
+      ttsSentenceQueue: config.ttsSentenceQueue,
+    });
+  }
+  return new QueueClient({
+    connectionString: config.storageConnectionString!,
+    scriptGenQueue: config.scriptGenQueue,
+    ttsSentenceQueue: config.ttsSentenceQueue,
+  });
 }
 
 export function getContext(): ApiContext {
@@ -60,16 +142,12 @@ export function getContext(): ApiContext {
   const config = loadConfig();
   cached = {
     config,
-    lessons: new BlobLessonRepository(config.storageConnectionString, config.lessonsContainer),
-    audio: new BlobAudioStorage(config.storageConnectionString, config.audioContainer),
-    queue: new QueueClient(
-      config.storageConnectionString,
-      config.scriptGenQueue,
-      config.ttsSentenceQueue,
-    ),
+    lessons: buildLessons(config),
+    audio: buildAudio(config),
+    queue: buildQueue(config),
     llm: buildLlm(config),
     tts: buildTts(config),
-    rateLimits: new BlobRateLimitStore(config.storageConnectionString, config.rateLimitContainer),
+    rateLimits: buildRateLimits(config),
     telemetry: createTelemetry({ connectionString: config.appInsightsConnectionString }),
   };
   return cached;
