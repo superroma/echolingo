@@ -10,8 +10,8 @@ param tags object
 @description('LLM model name; deployment name will match.')
 param llmModelName string
 
-@description('LLM model version (Azure-managed snapshot, e.g. 2024-07-18).')
-param llmModelVersion string = '2024-07-18'
+@description('LLM model version (Azure-managed snapshot).')
+param llmModelVersion string = '2026-03-17'
 
 @description('TTS model name; deployment name will match.')
 param ttsModelName string

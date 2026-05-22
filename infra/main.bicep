@@ -9,8 +9,8 @@ param environmentName string
 @description('Primary location for all resources.')
 param location string
 
-@description('Location for Azure OpenAI (some models have regional availability).')
-param openAiLocation string = 'westeurope'
+@description('Location for Azure OpenAI (some models have regional availability; Sweden Central has both gpt-5.x-mini and tts).')
+param openAiLocation string = 'swedencentral'
 
 @description('Object id of the principal deploying — granted Cognitive Services OpenAI User on the AOAI resource for local dev.')
 param principalId string = ''
@@ -19,7 +19,7 @@ param principalId string = ''
 param llmModelName string = 'gpt-5.4-mini'
 
 @description('Azure OpenAI LLM model version snapshot.')
-param llmModelVersion string = '2024-07-18'
+param llmModelVersion string = '2026-03-17'
 
 @description('Azure OpenAI TTS model name (deployment name will match).')
 param ttsModelName string = 'tts'

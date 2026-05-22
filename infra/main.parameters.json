@@ -4,10 +4,10 @@
   "parameters": {
     "environmentName": { "value": "${AZURE_ENV_NAME}" },
     "location": { "value": "${AZURE_LOCATION}" },
-    "openAiLocation": { "value": "${AZURE_OPENAI_LOCATION=westeurope}" },
+    "openAiLocation": { "value": "${AZURE_OPENAI_LOCATION=swedencentral}" },
     "principalId": { "value": "${AZURE_PRINCIPAL_ID}" },
     "llmModelName": { "value": "${LLM_MODEL_NAME=gpt-5.4-mini}" },
-    "llmModelVersion": { "value": "${LLM_MODEL_VERSION=2024-07-18}" },
+    "llmModelVersion": { "value": "${LLM_MODEL_VERSION=2026-03-17}" },
     "ttsModelName": { "value": "${TTS_MODEL_NAME=tts}" },
     "ttsModelVersion": { "value": "${TTS_MODEL_VERSION=001}" },
     "deploymentQuotaTpm": { "value": "${DEPLOYMENT_QUOTA_TPM=150}" }
