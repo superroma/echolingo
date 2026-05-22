@@ -60,8 +60,8 @@ module openai 'br/public:avm/res/cognitive-services/account:0.9.1' = {
           version: ttsModelVersion
         }
         sku: {
-          name: 'GlobalStandard'
-          capacity: quotaTpm
+          name: 'Standard'
+          capacity: 20
         }
         versionUpgradeOption: 'OnceCurrentVersionExpired'
       }
