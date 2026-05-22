@@ -1,6 +1,6 @@
 import { BlobServiceClient, RestError, type ContainerClient } from '@azure/storage-blob';
 import { DefaultAzureCredential } from '@azure/identity';
-import type { AudioLang, AudioStorage } from '@echolingo/shared';
+import type { AudioLang, AudioStorage } from '../_shared/index.js';
 
 function blobName(lessonId: string, sentenceIndex: number, lang: AudioLang): string {
   return `${lessonId}/${lang}/${sentenceIndex}.mp3`;

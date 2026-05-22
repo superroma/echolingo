@@ -1,5 +1,5 @@
 import OpenAI, { AzureOpenAI, APIError } from 'openai';
-import { retryWithBackoff, type BuiltPrompt, type LlmEngine } from '@echolingo/shared';
+import { retryWithBackoff, type BuiltPrompt, type LlmEngine } from '../_shared/index.js';
 
 export type OpenAiLlmEngineAuth =
   | { kind: 'direct'; apiKey: string }

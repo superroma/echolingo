@@ -1,5 +1,5 @@
 import { app } from '@azure/functions';
-import type { TtsSentenceJob } from '@echolingo/shared';
+import type { TtsSentenceJob } from '../_shared/index.js';
 import { getContext } from '../context.js';
 
 const LANG_BY_NATIVE = { en: 'en', ru: 'ru' } as const;

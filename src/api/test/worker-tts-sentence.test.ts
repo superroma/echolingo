@@ -8,7 +8,7 @@ import {
   MockTtsEngine,
   lessonId,
   type Lesson,
-} from '@echolingo/shared';
+} from '../src/_shared/index.js';
 import { lessonParams } from './helpers/fixtures.js';
 
 function buildContext(): ApiContext {

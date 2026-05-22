@@ -1,6 +1,6 @@
 import { BlobServiceClient, RestError, type ContainerClient } from '@azure/storage-blob';
 import { DefaultAzureCredential } from '@azure/identity';
-import type { Lesson, LessonRepository } from '@echolingo/shared';
+import type { Lesson, LessonRepository } from '../_shared/index.js';
 
 const BLOB_NAME_SUFFIX = '.json';
 

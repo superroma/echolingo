@@ -1,4 +1,4 @@
-import type { LessonParams } from '@echolingo/shared';
+import type { LessonParams } from '../../src/_shared/index.js';
 
 export function lessonParams(overrides: Partial<LessonParams> = {}): LessonParams {
   return {

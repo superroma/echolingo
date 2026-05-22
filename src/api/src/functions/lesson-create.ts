@@ -1,5 +1,5 @@
 import { app, type HttpRequest, type HttpResponseInit } from '@azure/functions';
-import { isLessonParams, lessonId, type Lesson } from '@echolingo/shared';
+import { isLessonParams, lessonId, type Lesson } from '../_shared/index.js';
 import { getContext } from '../context.js';
 
 function clientIp(req: HttpRequest): string {

@@ -3,7 +3,7 @@ import {
   type QueueClient as AzureQueueClient,
 } from '@azure/storage-queue';
 import { DefaultAzureCredential } from '@azure/identity';
-import type { ScriptGenJob, TtsSentenceJob } from '@echolingo/shared';
+import type { ScriptGenJob, TtsSentenceJob } from '../_shared/index.js';
 
 export interface QueueClientOptions {
   scriptGenQueue: string;

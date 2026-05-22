@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
 name: echolingo
 metadata:
   template: echolingo@0.1.0
@@ -6,13 +8,7 @@ services:
     project: ./src/api
     language: ts
     host: function
-    dist: dist
-    hooks:
-      prepackage:
-        shell: sh
-        run: |
-          cd ../shared && npm run build
-          cd ../api && npm run build
+    remoteBuild: true
   web:
     project: ./src/web
     language: ts

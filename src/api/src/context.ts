@@ -5,7 +5,7 @@ import {
   type LessonRepository,
   type LlmEngine,
   type TtsEngine,
-} from '@echolingo/shared';
+} from './_shared/index.js';
 import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity';
 import { loadConfig, type Config } from './config.js';
 import { BlobLessonRepository } from './storage/blob-lesson-repository.js';

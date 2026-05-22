@@ -6,7 +6,7 @@ import {
   type TtsLang,
   type TtsSynthesizeRequest,
   type TtsSynthesizeResult,
-} from '@echolingo/shared';
+} from '../_shared/index.js';
 
 export type OpenAiTtsEngineAuth =
   | { kind: 'direct'; apiKey: string }

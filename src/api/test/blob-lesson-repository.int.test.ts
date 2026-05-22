@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { BlobLessonRepository } from '../src/storage/blob-lesson-repository.js';
-import { lessonId, type Lesson } from '@echolingo/shared';
+import { lessonId, type Lesson } from '../src/_shared/index.js';
 import { AZURITE_CONNECTION_STRING, isAzuriteReachable } from './helpers/azurite.js';
 import { resetContainer } from './helpers/containers.js';
 import { lessonParams } from './helpers/fixtures.js';

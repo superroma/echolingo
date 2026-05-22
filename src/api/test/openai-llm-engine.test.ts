@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { OpenAiLlmEngine } from '../src/llm/openai-llm-engine.js';
-import { buildPrompt } from '@echolingo/shared';
+import { buildPrompt } from '../src/_shared/index.js';
 
 const CANNED = ['Καλημέρα.||Good morning.', 'Γεια σου.||Hello.'].join('\n');
 

@@ -7,7 +7,7 @@ import {
   MockLlmEngine,
   MockTtsEngine,
   lessonId,
-} from '@echolingo/shared';
+} from '../src/_shared/index.js';
 import type { HttpRequest } from '@azure/functions';
 import { lessonParams } from './helpers/fixtures.js';
 

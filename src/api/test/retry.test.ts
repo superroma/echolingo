@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { retryWithBackoff } from '@echolingo/shared';
+import { retryWithBackoff } from '../src/_shared/index.js';
 
 describe('retryWithBackoff', () => {
   it('returns the result of the first successful call', async () => {

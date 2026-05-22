@@ -1,5 +1,5 @@
 import { app } from '@azure/functions';
-import { buildPrompt, parseScript, type ScriptGenJob } from '@echolingo/shared';
+import { buildPrompt, parseScript, type ScriptGenJob } from '../_shared/index.js';
 import { getContext } from '../context.js';
 
 export async function scriptGenWorker(job: ScriptGenJob): Promise<void> {

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import {
   MockLlmEngine,
   MockTtsEngine,
-} from '@echolingo/shared';
+} from '../src/_shared/index.js';
 import { BlobLessonRepository } from '../src/storage/blob-lesson-repository.js';
 import { BlobAudioStorage } from '../src/storage/blob-audio-storage.js';
 import { QueueClient } from '../src/queue/queue-client.js';

@@ -3,7 +3,7 @@ import {
   MockLlmEngine,
   MockTtsEngine,
   lessonId,
-} from '@echolingo/shared';
+} from '../src/_shared/index.js';
 import { BlobLessonRepository } from '../src/storage/blob-lesson-repository.js';
 import { BlobAudioStorage } from '../src/storage/blob-audio-storage.js';
 import { BlobRateLimitStore } from '../src/storage/blob-rate-limit-store.js';
