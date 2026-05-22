@@ -108,6 +108,7 @@ module roleAssignments './modules/role-assignments.bicep' = {
     functionAppPrincipalId: functionApp.outputs.principalId
     storageAccountName: storage.outputs.storageAccountName
     openAiAccountName: openai.outputs.accountName
+    deployerPrincipalId: principalId
   }
 }
 

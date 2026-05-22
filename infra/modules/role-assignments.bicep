@@ -7,6 +7,9 @@ param storageAccountName string
 @description('Azure OpenAI account name.')
 param openAiAccountName string
 
+@description('Object id of the principal running azd deploy — receives Storage Blob Data Contributor for package uploads. Empty in CI deploys (where the SP needs its own role).')
+param deployerPrincipalId string = ''
+
 resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
   name: storageAccountName
 }
@@ -57,5 +60,15 @@ resource roleOpenAi 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     principalId: functionAppPrincipalId
     principalType: 'ServicePrincipal'
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', openAiUser)
+  }
+}
+
+resource roleDeployerStorageBlob 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(deployerPrincipalId)) {
+  scope: storage
+  name: guid(storage.id, deployerPrincipalId, blobDataContributor)
+  properties: {
+    principalId: deployerPrincipalId
+    principalType: 'User'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', blobDataContributor)
   }
 }
