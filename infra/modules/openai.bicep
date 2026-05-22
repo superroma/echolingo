@@ -61,7 +61,7 @@ module openai 'br/public:avm/res/cognitive-services/account:0.9.1' = {
         }
         sku: {
           name: 'Standard'
-          capacity: 20
+          capacity: 3
         }
         versionUpgradeOption: 'OnceCurrentVersionExpired'
       }
