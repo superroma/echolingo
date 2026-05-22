@@ -7,9 +7,6 @@ param location string
 @description('Tags.')
 param tags object
 
-@description('Resource id of the linked Function App.')
-param linkedFunctionAppResourceId string
-
 var swaName = 'stapp-echolingo-${environmentName}'
 
 module swa 'br/public:avm/res/web/static-site:0.6.0' = {
@@ -20,10 +17,6 @@ module swa 'br/public:avm/res/web/static-site:0.6.0' = {
     tags: union(tags, { 'azd-service-name': 'web' })
     sku: 'Free'
     allowConfigFileUpdates: true
-    linkedBackend: {
-      resourceId: linkedFunctionAppResourceId
-      region: location
-    }
   }
 }
 

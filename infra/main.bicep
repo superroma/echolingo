@@ -118,7 +118,6 @@ module staticWebApp './modules/static-web-app.bicep' = {
     environmentName: environmentName
     location: 'westeurope'
     tags: tags
-    linkedFunctionAppResourceId: functionApp.outputs.functionAppResourceId
   }
 }
 
@@ -130,4 +129,6 @@ output AZURE_OPENAI_TTS_DEPLOYMENT string = openai.outputs.ttsDeployment
 output AZURE_STORAGE_ACCOUNT_NAME string = storage.outputs.storageAccountName
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.appInsightsConnectionString
 output FUNCTION_APP_NAME string = functionApp.outputs.functionAppName
+output FUNCTION_APP_URL string = 'https://${functionApp.outputs.defaultHostname}'
 output WEB_URL string = staticWebApp.outputs.defaultHostname
+output NEXT_PUBLIC_API_BASE_URL string = 'https://${functionApp.outputs.defaultHostname}'

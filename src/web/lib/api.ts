@@ -1,5 +1,7 @@
 import type { Lesson, LessonParams } from '@echolingo/shared/types';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
+
 export type CreateLessonResult =
   | { kind: 'created'; id: string; status: string }
   | { kind: 'existing'; id: string; status: string }
@@ -25,7 +27,7 @@ async function readJson(res: Response): Promise<Record<string, unknown>> {
 }
 
 export async function createLesson(params: LessonParams): Promise<CreateLessonResult> {
-  const res = await fetch('/api/lesson', {
+  const res = await fetch(`${API_BASE_URL}/api/lesson`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(params),
@@ -53,7 +55,7 @@ export async function createLesson(params: LessonParams): Promise<CreateLessonRe
 }
 
 export async function getLesson(id: string): Promise<GetLessonResult> {
-  const res = await fetch(`/api/lesson/${encodeURIComponent(id)}`);
+  const res = await fetch(`${API_BASE_URL}/api/lesson/${encodeURIComponent(id)}`);
   if (res.status === 404) return { kind: 'not_found' };
   const body = await readJson(res);
   if (res.status === 200) {
@@ -67,7 +69,7 @@ export async function getLesson(id: string): Promise<GetLessonResult> {
 }
 
 export async function downloadLesson(id: string): Promise<DownloadLessonResult> {
-  const res = await fetch(`/api/lesson/${encodeURIComponent(id)}/download`, { method: 'POST' });
+  const res = await fetch(`${API_BASE_URL}/api/lesson/${encodeURIComponent(id)}/download`, { method: 'POST' });
   const body = await readJson(res);
   if (res.status === 200) {
     return { kind: 'ready', url: String(body.url) };

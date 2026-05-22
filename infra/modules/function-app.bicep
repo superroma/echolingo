@@ -74,7 +74,7 @@ module functionApp 'br/public:avm/res/web/site:0.13.0' = {
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       cors: {
-        allowedOrigins: [ 'https://portal.azure.com' ]
+        allowedOrigins: [ '*' ]
       }
     }
     functionAppConfig: {
