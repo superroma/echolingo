@@ -25,6 +25,10 @@ module storage 'br/public:avm/res/storage/storage-account:0.14.3' = {
     allowSharedKeyAccess: true
     publicNetworkAccess: 'Enabled'
     minimumTlsVersion: 'TLS1_2'
+    networkAcls: {
+      bypass: 'AzureServices'
+      defaultAction: 'Allow'
+    }
     blobServices: {
       deleteRetentionPolicyEnabled: false
       containerDeleteRetentionPolicyEnabled: false

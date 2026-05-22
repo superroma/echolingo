@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "dist/src/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/index.js --external:@azure/functions --external:@azure/identity --external:@azure/storage-blob --external:@azure/storage-queue --external:openai --external:applicationinsights --banner:js='import{createRequire}from\"module\";const require=createRequire(import.meta.url);' && cp host.json dist/host.json && node -e \"const p=require('./package.json');delete p.devDependencies;p.main='index.js';require('fs').writeFileSync('dist/package.json',JSON.stringify({name:p.name,version:p.version,type:p.type,main:p.main,dependencies:p.dependencies},null,2));\"",
+    "build:tsc": "tsc -p tsconfig.json --noEmit",
     "start": "npm run build && func start",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -15,12 +16,13 @@
     "@azure/identity": "^4.13.1",
     "@azure/storage-blob": "^12.25.0",
     "@azure/storage-queue": "^12.24.0",
-    "@echolingo/shared": "*",
     "applicationinsights": "^3.4.0",
     "openai": "^4.68.0"
   },
   "devDependencies": {
+    "@echolingo/shared": "*",
     "@types/node": "^20.16.10",
+    "esbuild": "^0.24.0",
     "msw": "^2.6.0",
     "vitest": "^2.1.4"
   }
