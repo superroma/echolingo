@@ -17,6 +17,7 @@ export interface PlayerControls {
   next(): void;
   prev(): void;
   repeatSentence(): void;
+  jumpToSentence(sentenceIdx: number): void;
   setSpeed(rate: number): void;
 }
 
@@ -121,6 +122,14 @@ export function usePlayer(playlist: PlaylistEntry[]): {
     setCurrentChunk(target);
   }, [currentChunk, playlist]);
 
+  const jumpToSentence = useCallback(
+    (sentenceIdx: number) => {
+      const target = playlist.findIndex((e) => e.sentenceIndex === sentenceIdx);
+      if (target >= 0) setCurrentChunk(target);
+    },
+    [playlist],
+  );
+
   const repeatSentence = useCallback(() => {
     const currentSentenceIdx = playlist[currentChunk]?.sentenceIndex ?? 0;
     let target = currentChunk;
@@ -163,6 +172,6 @@ export function usePlayer(playlist: PlaylistEntry[]): {
   return {
     audioRef,
     state: { isPlaying, currentChunk, currentSentence, speed },
-    controls: { play, pause, toggle, next, prev, repeatSentence, setSpeed },
+    controls: { play, pause, toggle, next, prev, repeatSentence, jumpToSentence, setSpeed },
   };
 }
