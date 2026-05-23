@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "microsoft-learn": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "chromedevtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    }
+  }
+}
