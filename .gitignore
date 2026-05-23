@@ -31,3 +31,4 @@ obj/
 # next
 .next/
 out/
+.echolingo-*.png
