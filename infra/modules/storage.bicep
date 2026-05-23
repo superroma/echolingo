@@ -21,7 +21,7 @@ module storage 'br/public:avm/res/storage/storage-account:0.14.3' = {
     skuName: 'Standard_LRS'
     kind: 'StorageV2'
     accessTier: 'Hot'
-    allowBlobPublicAccess: false
+    allowBlobPublicAccess: true
     allowSharedKeyAccess: true
     publicNetworkAccess: 'Enabled'
     minimumTlsVersion: 'TLS1_2'
@@ -34,7 +34,7 @@ module storage 'br/public:avm/res/storage/storage-account:0.14.3' = {
       containerDeleteRetentionPolicyEnabled: false
       containers: [
         { name: 'lessons' }
-        { name: 'audio' }
+        { name: 'audio', publicAccess: 'Blob' }
         { name: 'rate-limits' }
         { name: 'deploymentpackage' }
       ]
