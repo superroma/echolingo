@@ -1,5 +1,6 @@
-import type { AudioLang } from './storage/audio-storage.js';
 import type { Lesson } from './types.js';
+
+export type AudioLang = 'gr' | 'native';
 
 export interface PlaylistEntry {
   sentenceIndex: number;

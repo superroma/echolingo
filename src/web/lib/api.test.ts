@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createLesson, getLesson, downloadLesson } from './api.js';
-import type { LessonParams } from '@echolingo/shared';
+import type { LessonParams } from '@echolingo/shared/types';
 
 const params: LessonParams = {
   topic: 'at the market',
