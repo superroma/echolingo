@@ -39,16 +39,25 @@ export function TranscriptView({
 
   return (
     <ol ref={containerRef} className="space-y-1 pb-32">
-      {lesson.sentences.map((s) => (
-        <SentenceRow
-          key={s.i}
-          sentence={s}
-          isCurrent={s.i === currentSentence}
-          showNative={lesson.params.mode === 'bilingual'}
-          onJump={() => onJump(s.i)}
-          rowRef={s.i === currentSentence ? currentRef : null}
-        />
-      ))}
+      {lesson.sentences.map((s) => {
+        const isCurrent = s.i === currentSentence;
+        return (
+          <SentenceRow
+            key={s.i}
+            sentence={s}
+            isCurrent={isCurrent}
+            showNative={lesson.params.mode === 'bilingual'}
+            onJump={() => onJump(s.i)}
+            attachRef={
+              isCurrent
+                ? (el) => {
+                    currentRef.current = el;
+                  }
+                : undefined
+            }
+          />
+        );
+      })}
     </ol>
   );
 }
@@ -58,18 +67,18 @@ function SentenceRow({
   isCurrent,
   showNative,
   onJump,
-  rowRef,
+  attachRef,
 }: {
   sentence: Sentence;
   isCurrent: boolean;
   showNative: boolean;
   onJump: () => void;
-  rowRef: React.RefObject<HTMLLIElement | null> | null;
+  attachRef?: (el: HTMLLIElement | null) => void;
 }) {
   if (isCurrent) {
     return (
       <li
-        ref={rowRef}
+        ref={attachRef}
         className="relative cursor-pointer rounded-r-md bg-aegean-50 px-4 py-3"
         onClick={onJump}
       >
@@ -86,7 +95,7 @@ function SentenceRow({
   }
   return (
     <li
-      ref={rowRef}
+      ref={attachRef}
       onClick={onJump}
       className="cursor-pointer rounded-md px-4 py-1.5 transition-colors hover:bg-paper"
     >
