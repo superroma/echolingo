@@ -1,61 +1,58 @@
 'use client';
 
 import type { PlayerControls as Controls, PlayerState } from '../hooks/use-player';
+import { Scrubber } from './scrubber';
 
 const SPEEDS = [0.75, 1, 1.25] as const;
 
 export function PlayerControlsView({
   state,
   controls,
+  elapsedSec,
+  totalSec,
+  onSeek,
 }: {
   state: PlayerState;
   controls: Controls;
+  elapsedSec: number;
+  totalSec: number;
+  onSeek: (sec: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-center gap-3">
-      <button
-        type="button"
-        onClick={controls.prev}
-        className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-        aria-label="Previous sentence"
-      >
-        ‹ Prev
-      </button>
-      <button
-        type="button"
-        onClick={controls.repeatSentence}
-        className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-        aria-label="Repeat current sentence"
-      >
-        ↺ Repeat
-      </button>
-      <button
-        type="button"
-        onClick={controls.toggle}
-        className="rounded-md bg-neutral-900 px-5 py-2 font-medium text-white"
-        aria-label={state.isPlaying ? 'Pause' : 'Play'}
-      >
-        {state.isPlaying ? '❚❚ Pause' : '▶ Play'}
-      </button>
-      <button
-        type="button"
-        onClick={controls.next}
-        className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-        aria-label="Next sentence"
-      >
-        Next ›
-      </button>
-      <div className="ml-2 flex items-center gap-1">
+    <div className="space-y-4">
+      <Scrubber elapsedSec={elapsedSec} totalSec={totalSec} onSeek={onSeek} />
+
+      <div className="flex items-center justify-center gap-4">
+        <RoundButton onClick={controls.repeatSentence} size="lg" tone="terracotta" label="Repeat sentence">
+          ↺
+        </RoundButton>
+        <RoundButton onClick={controls.prev} size="md" tone="surface" label="Previous sentence">
+          ◀◀
+        </RoundButton>
+        <RoundButton
+          onClick={controls.toggle}
+          size="lg"
+          tone="ink"
+          label={state.isPlaying ? 'Pause' : 'Play'}
+        >
+          {state.isPlaying ? '❚❚' : '▶'}
+        </RoundButton>
+        <RoundButton onClick={controls.next} size="md" tone="surface" label="Next sentence">
+          ▶▶
+        </RoundButton>
+      </div>
+
+      <div className="flex items-center justify-center gap-1">
         {SPEEDS.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => controls.setSpeed(s)}
             className={
-              'rounded-md px-2 py-1 text-xs ' +
+              'rounded-full px-3 py-1 text-xs transition-colors ' +
               (Math.abs(state.speed - s) < 0.01
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-700')
+                ? 'bg-ink text-paper'
+                : 'bg-surface text-ink-muted hover:text-ink')
             }
           >
             {s}×
@@ -63,5 +60,37 @@ export function PlayerControlsView({
         ))}
       </div>
     </div>
+  );
+}
+
+function RoundButton({
+  onClick,
+  size,
+  tone,
+  label,
+  children,
+}: {
+  onClick: () => void;
+  size: 'md' | 'lg';
+  tone: 'ink' | 'surface' | 'terracotta';
+  label: string;
+  children: React.ReactNode;
+}) {
+  const sizeCls = size === 'lg' ? 'h-14 w-14 text-lg' : 'h-12 w-12 text-base';
+  const toneCls =
+    tone === 'ink'
+      ? 'bg-ink text-paper hover:opacity-90'
+      : tone === 'terracotta'
+        ? 'bg-terracotta text-white hover:opacity-90'
+        : 'bg-surface text-ink border border-hairline hover:border-ink';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className={`${sizeCls} ${toneCls} flex items-center justify-center rounded-full transition-opacity`}
+    >
+      {children}
+    </button>
   );
 }
