@@ -51,17 +51,17 @@ export function usePlayer(playlist: PlaylistEntry[]): {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    // Don't listen for 'pause' — load() and src changes fire transient pause
+    // events that would falsely clear isPlaying mid-chunk-transition.
+    // isPlaying is set false explicitly by the pause() control or at end of playlist.
     const onPlay = () => setIsPlaying(true);
-    const onPause = () => setIsPlaying(false);
     const onEnded = () => {
       setCurrentChunk((c) => Math.min(c + 1, playlist.length));
     };
     audio.addEventListener('play', onPlay);
-    audio.addEventListener('pause', onPause);
     audio.addEventListener('ended', onEnded);
     return () => {
       audio.removeEventListener('play', onPlay);
-      audio.removeEventListener('pause', onPause);
       audio.removeEventListener('ended', onEnded);
     };
   }, [playlist.length]);
@@ -86,6 +86,7 @@ export function usePlayer(playlist: PlaylistEntry[]): {
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
+    setIsPlaying(false);
   }, []);
 
   const toggle = useCallback(() => {
