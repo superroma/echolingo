@@ -1,4 +1,4 @@
-const CACHE_NAME = 'echolingo-shell-v1';
+const CACHE_NAME = 'echolingo-shell-v2';
 const SHELL_URLS = ['/', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
@@ -17,6 +17,9 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Network-first for shell resources. Falls back to cache when offline.
+// This guarantees users see new deploys on every visit while keeping
+// offline access via the last-known-good cached copy.
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
@@ -31,17 +34,17 @@ self.addEventListener('fetch', (event) => {
     request.destination === 'font' ||
     url.pathname.endsWith('.webmanifest');
 
-  if (isShell) {
-    event.respondWith(
-      caches.match(request).then(
-        (cached) =>
-          cached ||
-          fetch(request).then((response) => {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-            return response;
-          }),
-      ),
-    );
-  }
+  if (!isShell) return;
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response && response.ok && response.type === 'basic') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request).then((cached) => cached || Response.error())),
+  );
 });

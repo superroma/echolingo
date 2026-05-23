@@ -29,7 +29,20 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Script id="register-sw" strategy="afterInteractive">
           {`
             if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.register('/sw.js').catch(() => {});
+              navigator.serviceWorker
+                .register('/sw.js')
+                .then((reg) => {
+                  // Check for new service worker on every visit
+                  reg.update().catch(() => {});
+                  // When a new SW takes control, reload to pick up fresh chunks
+                  let reloaded = false;
+                  navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (reloaded) return;
+                    reloaded = true;
+                    window.location.reload();
+                  });
+                })
+                .catch(() => {});
             }
           `}
         </Script>
