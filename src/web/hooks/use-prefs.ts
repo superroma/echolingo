@@ -6,33 +6,35 @@ import {
   LESSON_STYLES,
   LESSON_MODES,
   BILINGUAL_ORDERS,
-  NATIVE_LANGS,
+  LANG_CODES,
   type BilingualOrder,
+  type LangCode,
   type LessonLength,
   type LessonLevel,
   type LessonMode,
   type LessonStyle,
-  type NativeLang,
 } from '@echolingo/shared/types';
 
 export interface FormPrefs {
   topic: string;
+  targetLang: LangCode;
+  nativeLang: LangCode;
   lengthMin: LessonLength;
   level: LessonLevel;
   style: LessonStyle;
   mode: LessonMode;
   bilingualOrder: BilingualOrder;
-  nativeLang: NativeLang;
 }
 
 export const DEFAULT_PREFS: FormPrefs = {
   topic: '',
+  targetLang: 'el',
+  nativeLang: 'en',
   lengthMin: 5,
   level: 3,
   style: 'dialogue',
   mode: 'bilingual',
-  bilingualOrder: 'gr_first',
-  nativeLang: 'en',
+  bilingualOrder: 'target_first',
 };
 
 const STORAGE_KEY = 'echolingo:prefs';
@@ -51,8 +53,19 @@ export function loadPrefs(storage: PrefsStorage): FormPrefs {
   } catch {
     return { ...DEFAULT_PREFS };
   }
+  const pickLang = (v: unknown, fallback: LangCode): LangCode =>
+    LANG_CODES.includes(v as LangCode) ? (v as LangCode) : fallback;
+
+  const targetLang = pickLang(parsed.targetLang, DEFAULT_PREFS.targetLang);
+  let nativeLang = pickLang(parsed.nativeLang, DEFAULT_PREFS.nativeLang);
+  if (nativeLang === targetLang) {
+    nativeLang = targetLang === 'en' ? 'ru' : 'en';
+  }
+
   return {
     topic: DEFAULT_PREFS.topic,
+    targetLang,
+    nativeLang,
     lengthMin: LESSON_LENGTHS.includes(parsed.lengthMin as LessonLength)
       ? (parsed.lengthMin as LessonLength)
       : DEFAULT_PREFS.lengthMin,
@@ -69,9 +82,6 @@ export function loadPrefs(storage: PrefsStorage): FormPrefs {
     bilingualOrder: BILINGUAL_ORDERS.includes(parsed.bilingualOrder as BilingualOrder)
       ? (parsed.bilingualOrder as BilingualOrder)
       : DEFAULT_PREFS.bilingualOrder,
-    nativeLang: NATIVE_LANGS.includes(parsed.nativeLang as NativeLang)
-      ? (parsed.nativeLang as NativeLang)
-      : DEFAULT_PREFS.nativeLang,
   };
 }
 
