@@ -75,7 +75,7 @@ async function uploadFullBlob(
   await blob.upload(data, data.length, {
     blobHTTPHeaders: { blobContentType: 'audio/mpeg' },
   });
-  return `${service.url}/${container}/${lessonId}/${FULL_BLOB_NAME}`;
+  return `${service.url.replace(/\/$/, '')}/${container}/${lessonId}/${FULL_BLOB_NAME}`;
 }
 
 function json(status: number, body: unknown): HttpResponseInit {

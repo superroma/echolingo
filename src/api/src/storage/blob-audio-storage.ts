@@ -34,7 +34,7 @@ export class BlobAudioStorage implements AudioStorage {
     }
     this.container = service.getContainerClient(opts.containerName);
     this.containerName = opts.containerName;
-    this.accountUrl = service.url;
+    this.accountUrl = service.url.replace(/\/$/, '');
   }
 
   async ensureContainer(): Promise<void> {
