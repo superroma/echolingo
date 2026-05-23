@@ -15,16 +15,12 @@ export type OpenAiTtsEngineAuth =
 export interface OpenAiTtsEngineOptions {
   auth: OpenAiTtsEngineAuth;
   model: string;
-  defaultVoices?: Partial<Record<TtsLang, string>>;
+  defaultVoice?: string;
   maxAttempts?: number;
   baseDelayMs?: number;
 }
 
-const DEFAULT_VOICES: Record<TtsLang, string> = {
-  el: 'alloy',
-  en: 'alloy',
-  ru: 'alloy',
-};
+const DEFAULT_VOICE = 'alloy';
 
 function isRetriable(err: unknown): boolean {
   if (err instanceof APIError) {
@@ -38,13 +34,13 @@ export class OpenAiTtsEngine implements TtsEngine {
   readonly name = 'openai' as const;
   private readonly client: OpenAI | AzureOpenAI;
   private readonly model: string;
-  private readonly defaultVoices: Record<TtsLang, string>;
+  private readonly defaultVoice: string;
   private readonly maxAttempts: number;
   private readonly baseDelayMs: number;
 
   constructor(opts: OpenAiTtsEngineOptions) {
     this.model = opts.model;
-    this.defaultVoices = { ...DEFAULT_VOICES, ...opts.defaultVoices };
+    this.defaultVoice = opts.defaultVoice ?? DEFAULT_VOICE;
     this.maxAttempts = opts.maxAttempts ?? 3;
     this.baseDelayMs = opts.baseDelayMs ?? 500;
     if (opts.auth.kind === 'direct') {
@@ -59,7 +55,7 @@ export class OpenAiTtsEngine implements TtsEngine {
   }
 
   async synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
-    const voice = req.voice ?? this.defaultVoices[req.lang];
+    const voice = req.voice ?? this.defaultVoice;
     const response = await retryWithBackoff(
       () =>
         this.client.audio.speech.create({

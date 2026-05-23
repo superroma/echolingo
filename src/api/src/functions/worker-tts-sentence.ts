@@ -2,8 +2,6 @@ import { app } from '@azure/functions';
 import type { TtsSentenceJob } from '../_shared/index.js';
 import { getContext } from '../context.js';
 
-const LANG_BY_NATIVE = { en: 'en', ru: 'ru' } as const;
-
 export async function ttsSentenceWorker(job: TtsSentenceJob): Promise<void> {
   const ctx = getContext();
   const lesson = await ctx.lessons.get(job.lessonId);
@@ -14,14 +12,19 @@ export async function ttsSentenceWorker(job: TtsSentenceJob): Promise<void> {
   }
   if (sentence.status === 'ready') return;
 
-  const grResult = await ctx.tts.synthesize({ text: sentence.gr, lang: 'el' });
+  const grResult = await ctx.tts.synthesize({
+    text: sentence.gr,
+    lang: lesson.params.targetLang,
+  });
   const grUrl = await ctx.audio.put(job.lessonId, job.sentenceIndex, 'gr', grResult.mp3);
 
   let nativeUrl: string | undefined;
   let nativeDurSec: number | undefined;
   if (lesson.params.mode === 'bilingual') {
-    const nativeLang = LANG_BY_NATIVE[lesson.params.nativeLang];
-    const nativeResult = await ctx.tts.synthesize({ text: sentence.native, lang: nativeLang });
+    const nativeResult = await ctx.tts.synthesize({
+      text: sentence.native,
+      lang: lesson.params.nativeLang,
+    });
     nativeUrl = await ctx.audio.put(job.lessonId, job.sentenceIndex, 'native', nativeResult.mp3);
     nativeDurSec = nativeResult.durationSec;
   }

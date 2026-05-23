@@ -1,6 +1,6 @@
-import type { TtsEngineName } from '../types.js';
+import type { LangCode, TtsEngineName } from '../types.js';
 
-export type TtsLang = 'el' | 'en' | 'ru';
+export type TtsLang = LangCode;
 
 export interface TtsSynthesizeRequest {
   text: string;
