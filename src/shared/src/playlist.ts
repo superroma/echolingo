@@ -34,12 +34,12 @@ export function buildPlaylist(lesson: Lesson): PlaylistEntry[] {
         }
       : null;
 
-    if (mode === 'greek_only') {
+    if (mode === 'target_only') {
       if (grEntry) out.push(grEntry);
       continue;
     }
-    const first = order === 'gr_first' ? grEntry : nativeEntry;
-    const second = order === 'gr_first' ? nativeEntry : grEntry;
+    const first = order === 'target_first' ? grEntry : nativeEntry;
+    const second = order === 'target_first' ? nativeEntry : grEntry;
     if (first) out.push(first);
     if (second) out.push(second);
   }

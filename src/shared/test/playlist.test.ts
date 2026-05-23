@@ -7,12 +7,13 @@ function lesson(overrides: Partial<Lesson> = {}): Lesson {
     id: 'l1',
     params: {
       topic: 'at the bakery',
+      targetLang: 'el',
+      nativeLang: 'en',
       lengthMin: 5,
       level: 3,
       style: 'dialogue',
       mode: 'bilingual',
-      bilingualOrder: 'gr_first',
-      nativeLang: 'en',
+      bilingualOrder: 'target_first',
       ttsEngine: 'openai',
     },
     status: 'ready',
@@ -47,7 +48,7 @@ function lesson(overrides: Partial<Lesson> = {}): Lesson {
 }
 
 describe('buildPlaylist', () => {
-  it('produces gr-then-native pairs in bilingual gr_first mode', () => {
+  it('produces target-then-native pairs in bilingual target_first mode', () => {
     const entries = buildPlaylist(lesson());
     expect(entries).toEqual([
       { sentenceIndex: 0, lang: 'gr', url: 'https://e/gr/0.mp3', durationSec: 1.2 },
@@ -57,7 +58,7 @@ describe('buildPlaylist', () => {
     ]);
   });
 
-  it('produces native-then-gr pairs in bilingual native_first mode', () => {
+  it('produces native-then-target pairs in bilingual native_first mode', () => {
     const entries = buildPlaylist(
       lesson({ params: { ...lesson().params, bilingualOrder: 'native_first' } }),
     );
@@ -69,9 +70,9 @@ describe('buildPlaylist', () => {
     ]);
   });
 
-  it('produces only gr entries in greek_only mode', () => {
+  it('produces only target entries in target_only mode', () => {
     const entries = buildPlaylist(
-      lesson({ params: { ...lesson().params, mode: 'greek_only' } }),
+      lesson({ params: { ...lesson().params, mode: 'target_only' } }),
     );
     expect(entries).toEqual([
       { sentenceIndex: 0, lang: 'gr', url: 'https://e/gr/0.mp3', durationSec: 1.2 },

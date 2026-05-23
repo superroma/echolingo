@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
+  LANG_CODES,
   LESSON_LENGTHS,
   LESSON_STYLES,
   LESSON_MODES,
   BILINGUAL_ORDERS,
-  NATIVE_LANGS,
   TTS_ENGINES,
   isLessonParams,
 } from '../src/types.js';
@@ -19,15 +19,17 @@ describe('domain enums', () => {
   });
 
   it('exposes the two modes', () => {
-    expect(LESSON_MODES).toEqual(['greek_only', 'bilingual']);
+    expect(LESSON_MODES).toEqual(['target_only', 'bilingual']);
   });
 
   it('exposes the two bilingual orders', () => {
-    expect(BILINGUAL_ORDERS).toEqual(['gr_first', 'native_first']);
+    expect(BILINGUAL_ORDERS).toEqual(['target_first', 'native_first']);
   });
 
-  it('exposes the two native languages', () => {
-    expect(NATIVE_LANGS).toEqual(['en', 'ru']);
+  it('exposes the curated v1 language codes', () => {
+    expect(LANG_CODES).toEqual([
+      'el', 'es', 'it', 'fr', 'de', 'pt', 'ja', 'zh', 'en', 'ru',
+    ]);
   });
 
   it('exposes the three TTS engines', () => {
@@ -38,12 +40,13 @@ describe('domain enums', () => {
 describe('isLessonParams', () => {
   const valid = {
     topic: 'at the bakery',
+    targetLang: 'el',
+    nativeLang: 'en',
     lengthMin: 10,
     level: 3,
     style: 'dialogue',
     mode: 'bilingual',
-    bilingualOrder: 'gr_first',
-    nativeLang: 'en',
+    bilingualOrder: 'target_first',
     ttsEngine: 'openai',
   };
 
@@ -64,11 +67,28 @@ describe('isLessonParams', () => {
     expect(isLessonParams({ ...valid, level: 6 })).toBe(false);
   });
 
-  it('rejects unknown style/mode/order/lang/engine', () => {
+  it('rejects unknown style/mode/order/engine', () => {
     expect(isLessonParams({ ...valid, style: 'rap' })).toBe(false);
-    expect(isLessonParams({ ...valid, mode: 'turkish_only' })).toBe(false);
-    expect(isLessonParams({ ...valid, bilingualOrder: 'random' })).toBe(false);
-    expect(isLessonParams({ ...valid, nativeLang: 'fr' })).toBe(false);
+    expect(isLessonParams({ ...valid, mode: 'greek_only' })).toBe(false);
+    expect(isLessonParams({ ...valid, bilingualOrder: 'gr_first' })).toBe(false);
     expect(isLessonParams({ ...valid, ttsEngine: 'aws' })).toBe(false);
+  });
+
+  it('rejects missing targetLang', () => {
+    const { targetLang: _t, ...rest } = valid;
+    expect(isLessonParams(rest)).toBe(false);
+  });
+
+  it('rejects unknown targetLang code', () => {
+    expect(isLessonParams({ ...valid, targetLang: 'xx' })).toBe(false);
+  });
+
+  it('rejects targetLang === nativeLang', () => {
+    expect(isLessonParams({ ...valid, targetLang: 'en' })).toBe(false);
+  });
+
+  it('accepts widened native languages beyond en/ru', () => {
+    expect(isLessonParams({ ...valid, nativeLang: 'es' })).toBe(true);
+    expect(isLessonParams({ ...valid, nativeLang: 'ja' })).toBe(true);
   });
 });
