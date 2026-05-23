@@ -8,15 +8,14 @@ import {
   LESSON_LENGTHS,
   LESSON_STYLES,
   LESSON_MODES,
-  BILINGUAL_ORDERS,
-  NATIVE_LANGS,
+  LANG_NAME,
+  type LangCode,
   type LessonParams,
   type LessonLength,
   type LessonLevel,
   type LessonStyle,
   type LessonMode,
   type BilingualOrder,
-  type NativeLang,
 } from '@echolingo/shared/types';
 
 type Status =
@@ -25,13 +24,31 @@ type Status =
   | { kind: 'rate_limited'; limit: number; used: number; resetAt: string }
   | { kind: 'error'; message: string };
 
+const TARGET_LANGS: LangCode[] = ['el', 'es', 'it', 'fr', 'de', 'pt', 'ja', 'zh'];
+const NATIVE_LANG_OPTIONS: LangCode[] = ['en', 'ru', 'es', 'fr', 'de', 'pt', 'ja', 'zh'];
+
 export function LessonForm() {
   const router = useRouter();
   const [prefs, setPrefs] = usePrefs();
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  const [nativePopoverOpen, setNativePopoverOpen] = useState(false);
 
   function update<K extends keyof FormPrefs>(key: K, value: FormPrefs[K]) {
     setPrefs({ ...prefs, [key]: value });
+  }
+
+  function pickTarget(code: LangCode) {
+    let nextNative = prefs.nativeLang;
+    if (nextNative === code) {
+      nextNative = code === 'en' ? 'ru' : 'en';
+    }
+    setPrefs({ ...prefs, targetLang: code, nativeLang: nextNative });
+  }
+
+  function pickNative(code: LangCode) {
+    if (code === prefs.targetLang) return;
+    setPrefs({ ...prefs, nativeLang: code });
+    setNativePopoverOpen(false);
   }
 
   async function submit(e: React.FormEvent) {
@@ -40,12 +57,13 @@ export function LessonForm() {
     setStatus({ kind: 'submitting' });
     const params: LessonParams = {
       topic: prefs.topic.trim(),
+      targetLang: prefs.targetLang,
+      nativeLang: prefs.nativeLang,
       lengthMin: prefs.lengthMin,
       level: prefs.level,
       style: prefs.style,
       mode: prefs.mode,
       bilingualOrder: prefs.bilingualOrder,
-      nativeLang: prefs.nativeLang,
       ttsEngine: 'openai',
     };
     const result = await createLesson(params);
@@ -59,42 +77,45 @@ export function LessonForm() {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5">
-      <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Topic</span>
-        <input
-          type="text"
-          required
-          value={prefs.topic}
-          onChange={(e) => update('topic', e.target.value)}
-          placeholder="at the bakery"
-          className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2"
-        />
-      </label>
+    <form onSubmit={submit} className="space-y-6">
+      <input
+        type="text"
+        required
+        value={prefs.topic}
+        onChange={(e) => update('topic', e.target.value)}
+        placeholder="at the bakery"
+        className="block w-full border-0 border-b border-hairline bg-transparent px-0 py-2 font-serif text-2xl text-ink placeholder:text-ink-faint focus:border-aegean focus:outline-none focus:ring-0"
+      />
 
-      <div>
-        <span className="text-sm font-medium text-neutral-700">Length (min)</span>
-        <div className="mt-1 flex gap-2">
-          {LESSON_LENGTHS.map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => update('lengthMin', m as LessonLength)}
-              className={
-                'rounded-md border px-3 py-1.5 text-sm ' +
-                (prefs.lengthMin === m
-                  ? 'border-neutral-900 bg-neutral-900 text-white'
-                  : 'border-neutral-300 bg-white text-neutral-800')
-              }
+      <Field label="LEARN">
+        <ChipRow>
+          {TARGET_LANGS.map((code) => (
+            <Chip
+              key={code}
+              active={prefs.targetLang === code}
+              onClick={() => pickTarget(code)}
             >
-              {m}
-            </button>
+              {LANG_NAME[code].toLowerCase()}
+            </Chip>
           ))}
-        </div>
-      </div>
+        </ChipRow>
+      </Field>
 
-      <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Level: {prefs.level}</span>
+      <Field label="LENGTH">
+        <ChipRow>
+          {LESSON_LENGTHS.map((m) => (
+            <Chip
+              key={m}
+              active={prefs.lengthMin === m}
+              onClick={() => update('lengthMin', m as LessonLength)}
+            >
+              {m} min
+            </Chip>
+          ))}
+        </ChipRow>
+      </Field>
+
+      <Field label={`LEVEL ${prefs.level}`}>
         <input
           type="range"
           min={1}
@@ -102,90 +123,145 @@ export function LessonForm() {
           step={1}
           value={prefs.level}
           onChange={(e) => update('level', Number(e.target.value) as LessonLevel)}
-          className="mt-1 block w-full"
+          className="block w-full accent-aegean"
         />
-      </label>
+      </Field>
 
-      <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Style</span>
-        <select
-          value={prefs.style}
-          onChange={(e) => update('style', e.target.value as LessonStyle)}
-          className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2"
-        >
+      <Field label="STYLE">
+        <ChipRow>
           {LESSON_STYLES.map((s) => (
-            <option key={s} value={s}>
+            <Chip
+              key={s}
+              active={prefs.style === s}
+              onClick={() => update('style', s as LessonStyle)}
+            >
               {s}
-            </option>
+            </Chip>
           ))}
-        </select>
-      </label>
+        </ChipRow>
+      </Field>
 
-      <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Mode</span>
-        <select
-          value={prefs.mode}
-          onChange={(e) => update('mode', e.target.value as LessonMode)}
-          className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2"
-        >
+      <Field label="MODE">
+        <ChipRow>
           {LESSON_MODES.map((m) => (
-            <option key={m} value={m}>
-              {m === 'greek_only' ? 'Greek only' : 'Bilingual'}
-            </option>
+            <Chip
+              key={m}
+              active={prefs.mode === m}
+              onClick={() => update('mode', m as LessonMode)}
+            >
+              {m === 'target_only' ? 'target only' : 'bilingual'}
+            </Chip>
           ))}
-        </select>
-      </label>
+        </ChipRow>
+      </Field>
 
       {prefs.mode === 'bilingual' && (
-        <label className="block">
-          <span className="text-sm font-medium text-neutral-700">Bilingual order</span>
-          <select
-            value={prefs.bilingualOrder}
-            onChange={(e) => update('bilingualOrder', e.target.value as BilingualOrder)}
-            className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2"
+        <div className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+          <button
+            type="button"
+            onClick={() =>
+              update(
+                'bilingualOrder',
+                (prefs.bilingualOrder === 'target_first'
+                  ? 'native_first'
+                  : 'target_first') as BilingualOrder,
+              )
+            }
+            className="underline-offset-4 hover:underline"
           >
-            {BILINGUAL_ORDERS.map((o) => (
-              <option key={o} value={o}>
-                {o === 'gr_first' ? 'Greek first' : 'Native first'}
-              </option>
-            ))}
-          </select>
-        </label>
+            {prefs.bilingualOrder === 'target_first' ? 'target first' : 'native first'}
+          </button>
+          <span aria-hidden>↔</span>
+          <button
+            type="button"
+            onClick={() => setNativePopoverOpen((v) => !v)}
+            className="underline-offset-4 hover:underline"
+            aria-haspopup="listbox"
+            aria-expanded={nativePopoverOpen}
+          >
+            {LANG_NAME[prefs.nativeLang].toLowerCase()}
+          </button>
+          {nativePopoverOpen && (
+            <ul role="listbox" className="ml-2 flex flex-wrap gap-1">
+              {NATIVE_LANG_OPTIONS.filter((c) => c !== prefs.targetLang).map((code) => (
+                <li key={code}>
+                  <button
+                    type="button"
+                    onClick={() => pickNative(code)}
+                    className={
+                      'rounded-full border border-hairline px-2 py-0.5 text-xs ' +
+                      (prefs.nativeLang === code
+                        ? 'bg-ink text-paper'
+                        : 'bg-surface text-ink')
+                    }
+                  >
+                    {LANG_NAME[code].toLowerCase()}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
-      <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Native language</span>
-        <select
-          value={prefs.nativeLang}
-          onChange={(e) => update('nativeLang', e.target.value as NativeLang)}
-          className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2"
+      <div className="flex flex-col items-center gap-3 pt-2">
+        <button
+          type="submit"
+          disabled={status.kind === 'submitting' || !prefs.topic.trim()}
+          className="rounded-full bg-terracotta px-12 py-3 font-medium text-white shadow-sm transition-opacity disabled:opacity-60"
         >
-          {NATIVE_LANGS.map((l) => (
-            <option key={l} value={l}>
-              {l === 'en' ? 'English' : 'Russian'}
-            </option>
-          ))}
-        </select>
-      </label>
+          {status.kind === 'submitting' ? 'generating…' : 'go'}
+        </button>
 
-      <button
-        type="submit"
-        disabled={status.kind === 'submitting' || !prefs.topic.trim()}
-        className="w-full rounded-md bg-neutral-900 px-4 py-2 font-medium text-white disabled:bg-neutral-400"
-      >
-        {status.kind === 'submitting' ? 'Generating…' : 'Go'}
-      </button>
-
-      {status.kind === 'rate_limited' && (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Daily limit reached ({status.used}/{status.limit}). Resets at {status.resetAt}.
-        </p>
-      )}
-      {status.kind === 'error' && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-900">
-          Error: {status.message}
-        </p>
-      )}
+        {status.kind === 'rate_limited' && (
+          <p className="border-l-2 border-terracotta bg-paper px-3 py-2 text-sm text-ink-muted">
+            Daily limit reached ({status.used}/{status.limit}). Resets at {status.resetAt}.
+          </p>
+        )}
+        {status.kind === 'error' && (
+          <p className="border-l-2 border-terracotta bg-paper px-3 py-2 text-sm text-ink-muted">
+            Error: {status.message}
+          </p>
+        )}
+      </div>
     </form>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium uppercase tracking-wider text-ink-muted">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function ChipRow({ children }: { children: React.ReactNode }) {
+  return <div className="flex flex-wrap gap-2">{children}</div>;
+}
+
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        'rounded-full border px-3 py-1.5 text-sm transition-colors ' +
+        (active
+          ? 'border-ink bg-ink text-paper'
+          : 'border-hairline bg-surface text-ink hover:border-ink')
+      }
+    >
+      {children}
+    </button>
   );
 }

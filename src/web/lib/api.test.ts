@@ -4,12 +4,13 @@ import type { LessonParams } from '@echolingo/shared/types';
 
 const params: LessonParams = {
   topic: 'at the market',
+  targetLang: 'el',
+  nativeLang: 'en',
   lengthMin: 5,
   level: 3,
   style: 'dialogue',
   mode: 'bilingual',
-  bilingualOrder: 'gr_first',
-  nativeLang: 'en',
+  bilingualOrder: 'target_first',
   ttsEngine: 'openai',
 };
 
