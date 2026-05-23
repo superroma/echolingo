@@ -6,7 +6,7 @@
   "main": "dist/src/index.js",
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc -p tsconfig.json",
+    "build": "npm run clean && tsc -p tsconfig.json && node scripts/prepare-dist.mjs",
     "start": "npm run build && func start",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.test.json"

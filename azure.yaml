@@ -8,7 +8,11 @@ services:
     project: ./src/api
     language: ts
     host: function
-    remoteBuild: true
+    dist: dist
+    hooks:
+      prepackage:
+        shell: sh
+        run: npm run build
   web:
     project: ./src/web
     language: ts

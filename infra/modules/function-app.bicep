@@ -110,7 +110,7 @@ module functionApp 'br/public:avm/res/web/site:0.13.0' = {
       AZURE_OPENAI_ENDPOINT: openAiEndpoint
       AZURE_OPENAI_LLM_DEPLOYMENT: openAiLlmDeployment
       AZURE_OPENAI_TTS_DEPLOYMENT: openAiTtsDeployment
-      AZURE_OPENAI_API_VERSION: '2024-10-21'
+      AZURE_OPENAI_API_VERSION: '2024-08-01-preview'
       LLM_ENGINE: 'openai'
       TTS_ENGINE: 'openai'
       RATE_LIMIT_PER_DAY: '20'
