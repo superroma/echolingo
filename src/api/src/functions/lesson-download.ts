@@ -28,9 +28,9 @@ export async function lessonDownloadHandler(req: HttpRequest): Promise<HttpRespo
     const gr = await ctx.audio.fetch(id, sentence.i, 'gr');
     const native =
       mode === 'bilingual' ? await ctx.audio.fetch(id, sentence.i, 'native') : null;
-    if (mode === 'greek_only') {
+    if (mode === 'target_only') {
       parts.push(gr);
-    } else if (order === 'gr_first') {
+    } else if (order === 'target_first') {
       parts.push(gr, native);
     } else {
       parts.push(native, gr);

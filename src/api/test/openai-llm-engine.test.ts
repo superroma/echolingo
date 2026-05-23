@@ -14,12 +14,13 @@ afterAll(() => server.close());
 
 const prompt = buildPrompt({
   topic: 'at the bakery',
+  targetLang: 'el',
+  nativeLang: 'en',
   lengthMin: 5,
   level: 3,
   style: 'dialogue',
   mode: 'bilingual',
-  bilingualOrder: 'gr_first',
-  nativeLang: 'en',
+  bilingualOrder: 'target_first',
   ttsEngine: 'openai',
 });
 

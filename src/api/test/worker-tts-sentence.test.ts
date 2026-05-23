@@ -40,7 +40,7 @@ function buildContext(): ApiContext {
 
 async function seed(
   ctx: ApiContext,
-  overrides: { mode?: 'bilingual' | 'greek_only' } = {},
+  overrides: { mode?: 'bilingual' | 'target_only' } = {},
 ): Promise<Lesson> {
   const params = lessonParams({ mode: overrides.mode ?? 'bilingual' });
   const id = lessonId(params);
@@ -82,8 +82,8 @@ describe('ttsSentenceWorker', () => {
     expect(updated?.status).toBe('generating_audio');
   });
 
-  it('skips native synthesis in greek_only mode', async () => {
-    const lesson = await seed(ctx, { mode: 'greek_only' });
+  it('skips native synthesis in target_only mode', async () => {
+    const lesson = await seed(ctx, { mode: 'target_only' });
     await ttsSentenceWorker({ type: 'ttsSentence', lessonId: lesson.id, sentenceIndex: 0 });
 
     const updated = await ctx.lessons.get(lesson.id);
