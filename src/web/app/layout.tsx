@@ -17,7 +17,7 @@ const serif = Source_Serif_4({
 
 export const metadata = {
   title: 'Echolingo',
-  description: 'On-demand AI-generated listening lessons',
+  description: 'On-demand AI-generated listening echoes',
   manifest: '/manifest.webmanifest',
 };
 

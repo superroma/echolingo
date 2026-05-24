@@ -3,16 +3,10 @@
 import { useEffect, useState } from 'react';
 import {
   LESSON_LENGTHS,
-  LESSON_STYLES,
-  LESSON_MODES,
-  BILINGUAL_ORDERS,
   LANG_CODES,
-  type BilingualOrder,
   type LangCode,
   type LessonLength,
   type LessonLevel,
-  type LessonMode,
-  type LessonStyle,
 } from '@echolingo/shared/types';
 
 export interface FormPrefs {
@@ -21,9 +15,6 @@ export interface FormPrefs {
   nativeLang: LangCode;
   lengthMin: LessonLength;
   level: LessonLevel;
-  style: LessonStyle;
-  mode: LessonMode;
-  bilingualOrder: BilingualOrder;
 }
 
 export const DEFAULT_PREFS: FormPrefs = {
@@ -32,9 +23,6 @@ export const DEFAULT_PREFS: FormPrefs = {
   nativeLang: 'en',
   lengthMin: 5,
   level: 3,
-  style: 'dialogue',
-  mode: 'bilingual',
-  bilingualOrder: 'target_first',
 };
 
 const STORAGE_KEY = 'echolingo:prefs';
@@ -73,15 +61,6 @@ export function loadPrefs(storage: PrefsStorage): FormPrefs {
       typeof parsed.level === 'number' && parsed.level >= 1 && parsed.level <= 5
         ? (parsed.level as LessonLevel)
         : DEFAULT_PREFS.level,
-    style: LESSON_STYLES.includes(parsed.style as LessonStyle)
-      ? (parsed.style as LessonStyle)
-      : DEFAULT_PREFS.style,
-    mode: LESSON_MODES.includes(parsed.mode as LessonMode)
-      ? (parsed.mode as LessonMode)
-      : DEFAULT_PREFS.mode,
-    bilingualOrder: BILINGUAL_ORDERS.includes(parsed.bilingualOrder as BilingualOrder)
-      ? (parsed.bilingualOrder as BilingualOrder)
-      : DEFAULT_PREFS.bilingualOrder,
   };
 }
 

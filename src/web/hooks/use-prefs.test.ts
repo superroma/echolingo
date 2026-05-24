@@ -25,9 +25,6 @@ describe('FormPrefs persistence', () => {
       ...DEFAULT_PREFS,
       lengthMin: 20,
       level: 5,
-      style: 'story',
-      mode: 'target_only',
-      bilingualOrder: 'native_first',
       nativeLang: 'ru',
     };
     savePrefs(storage, prefs);
@@ -42,11 +39,10 @@ describe('FormPrefs persistence', () => {
 
   it('loadPrefs falls back to defaults when stored fields are invalid', () => {
     const storage = fakeStorage();
-    storage.setItem('echolingo:prefs', JSON.stringify({ lengthMin: 7, level: 9, style: 'rap' }));
+    storage.setItem('echolingo:prefs', JSON.stringify({ lengthMin: 7, level: 9 }));
     const result = loadPrefs(storage);
     expect(result.lengthMin).toBe(DEFAULT_PREFS.lengthMin);
     expect(result.level).toBe(DEFAULT_PREFS.level);
-    expect(result.style).toBe(DEFAULT_PREFS.style);
   });
 
   it('savePrefs strips the topic — topic is never remembered', () => {
@@ -55,6 +51,33 @@ describe('FormPrefs persistence', () => {
     const raw = storage.getItem('echolingo:prefs')!;
     expect(JSON.parse(raw).topic).toBeUndefined();
   });
+
+  it('ignores legacy keys (style, mode, bilingualOrder) when loading', () => {
+    const storage = fakeStorage();
+    storage.setItem(
+      'echolingo:prefs',
+      JSON.stringify({
+        targetLang: 'es',
+        nativeLang: 'en',
+        lengthMin: 10,
+        level: 4,
+        style: 'story',
+        mode: 'target_only',
+        bilingualOrder: 'native_first',
+      }),
+    );
+    const loaded = loadPrefs(storage);
+    expect(loaded).toEqual({
+      topic: '',
+      targetLang: 'es',
+      nativeLang: 'en',
+      lengthMin: 10,
+      level: 4,
+    });
+    expect((loaded as unknown as Record<string, unknown>).style).toBeUndefined();
+    expect((loaded as unknown as Record<string, unknown>).mode).toBeUndefined();
+    expect((loaded as unknown as Record<string, unknown>).bilingualOrder).toBeUndefined();
+  });
 });
 
 describe('FormPrefs multi-language', () => {
@@ -62,26 +85,17 @@ describe('FormPrefs multi-language', () => {
     const loaded = loadPrefs(fakeStorage());
     expect(loaded.targetLang).toBe('el');
     expect(loaded.nativeLang).toBe('en');
-    expect(loaded.mode).toBe('bilingual');
-    expect(loaded.bilingualOrder).toBe('target_first');
   });
 
   it('falls back to defaults when stored language codes are unknown', () => {
     const s = fakeStorage();
     s.setItem(
       'echolingo:prefs',
-      JSON.stringify({
-        targetLang: 'xx',
-        nativeLang: 'yy',
-        mode: 'greek_only',
-        bilingualOrder: 'gr_first',
-      }),
+      JSON.stringify({ targetLang: 'xx', nativeLang: 'yy' }),
     );
     const loaded = loadPrefs(s);
     expect(loaded.targetLang).toBe('el');
     expect(loaded.nativeLang).toBe('en');
-    expect(loaded.mode).toBe('bilingual');
-    expect(loaded.bilingualOrder).toBe('target_first');
   });
 
   it('round-trips a valid Spanish-target preference', () => {

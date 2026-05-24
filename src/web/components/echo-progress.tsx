@@ -2,14 +2,14 @@
 
 import type { Lesson } from '@echolingo/shared/types';
 
-export function LessonProgress({ lesson }: { lesson: Lesson }) {
-  const { status, readySentences, totalSentences, sentences, params } = lesson;
+export function EchoProgress({ echo }: { echo: Lesson }) {
+  const { status, readySentences, totalSentences, sentences, params } = echo;
   const pct = totalSentences > 0 ? Math.round((readySentences / totalSentences) * 100) : 0;
 
   if (status === 'failed') {
     return (
       <div className="border-l-2 border-terracotta bg-paper px-4 py-3 text-sm text-ink-muted">
-        Generation failed. {lesson.error}
+        Generation failed. {echo.error}
       </div>
     );
   }

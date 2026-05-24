@@ -4,16 +4,16 @@ import { useEffect, useState } from 'react';
 import type { Lesson } from '@echolingo/shared/types';
 import { getLesson } from '../lib/api';
 
-export type LessonState =
+export type EchoState =
   | { kind: 'loading' }
   | { kind: 'not_found' }
   | { kind: 'error'; message: string }
-  | { kind: 'ok'; lesson: Lesson };
+  | { kind: 'ok'; echo: Lesson };
 
 const POLL_INTERVAL_MS = 2000;
 
-export function useLesson(id: string): LessonState {
-  const [state, setState] = useState<LessonState>({ kind: 'loading' });
+export function useEcho(id: string): EchoState {
+  const [state, setState] = useState<EchoState>({ kind: 'loading' });
 
   useEffect(() => {
     let cancelled = false;
@@ -30,7 +30,7 @@ export function useLesson(id: string): LessonState {
         setState({ kind: 'error', message: result.message });
         return;
       }
-      setState({ kind: 'ok', lesson: result.lesson });
+      setState({ kind: 'ok', echo: result.lesson });
       const s = result.lesson.status;
       if (s === 'generating_script' || s === 'generating_audio') {
         timer = setTimeout(tick, POLL_INTERVAL_MS);
