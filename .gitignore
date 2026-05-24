@@ -32,3 +32,8 @@ obj/
 .next/
 out/
 .echolingo-*.png
+
+# playwright
+test-results/
+playwright-report/
+.playwright/

@@ -15,6 +15,7 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "test": "npm run test --workspaces --if-present",
+    "test:e2e": "playwright test",
     "build": "npm run build --workspaces --if-present",
     "dev:web": "npm run dev --workspace @echolingo/web",
     "dev:api": "npm run start --workspace @echolingo/api",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",
+    "@playwright/test": "^1.60.0",
     "azurite": "^3.32.0",
     "eslint": "^9.14.0",
     "globals": "^15.12.0",

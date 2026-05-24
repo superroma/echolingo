@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   LESSON_LENGTHS,
   LANG_CODES,
@@ -71,9 +71,11 @@ export function savePrefs(storage: PrefsStorage, prefs: FormPrefs): void {
 
 export function usePrefs(): [FormPrefs, (next: FormPrefs) => void] {
   const [prefs, setPrefs] = useState<FormPrefs>(DEFAULT_PREFS);
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || hydratedRef.current) return;
+    hydratedRef.current = true;
     setPrefs(loadPrefs(window.localStorage));
   }, []);
 

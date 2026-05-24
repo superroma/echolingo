@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   LANG_CODES,
   LESSON_LENGTHS,
@@ -98,9 +98,11 @@ export interface UseEchoesResult {
 export function useEchoes(): UseEchoesResult {
   const [echoes, setEchoes] = useState<Echo[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || hydratedRef.current) return;
+    hydratedRef.current = true;
     setEchoes(loadEchoes(window.localStorage));
     setHydrated(true);
   }, []);

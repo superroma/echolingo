@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Lesson, LessonParams } from '@echolingo/shared/types';
 import { useEcho } from '../hooks/use-echo';
@@ -35,9 +35,12 @@ function NewEcho({ params }: { params: LessonParams }) {
   const { addEcho } = useEchoes();
   const [state, setState] = useState<CreateState>({ kind: 'creating' });
   const [attempt, setAttempt] = useState(0);
+  const postedAttemptRef = useRef(-1);
 
   useEffect(() => {
-    let cancelled = false;
+    if (postedAttemptRef.current === attempt) return;
+    postedAttemptRef.current = attempt;
+    const myAttempt = attempt;
     setState({ kind: 'creating' });
 
     void (async () => {
@@ -45,11 +48,11 @@ function NewEcho({ params }: { params: LessonParams }) {
       try {
         result = await createLesson(params);
       } catch (e) {
-        if (cancelled) return;
+        if (postedAttemptRef.current !== myAttempt) return;
         setState({ kind: 'network_error', message: (e as Error).message });
         return;
       }
-      if (cancelled) return;
+      if (postedAttemptRef.current !== myAttempt) return;
       if (result.kind === 'created' || result.kind === 'existing') {
         addEcho({
           id: result.id,
@@ -75,10 +78,6 @@ function NewEcho({ params }: { params: LessonParams }) {
       }
       setState({ kind: 'network_error', message: result.message });
     })();
-
-    return () => {
-      cancelled = true;
-    };
   }, [params, addEcho, router, attempt]);
 
   const retry = () => setAttempt((a) => a + 1);
