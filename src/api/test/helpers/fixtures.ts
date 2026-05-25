@@ -7,7 +7,6 @@ export function lessonParams(overrides: Partial<LessonParams> = {}): LessonParam
     nativeLang: 'en',
     lengthMin: 5,
     level: 3,
-    style: 'dialogue',
     mode: 'bilingual',
     bilingualOrder: 'target_first',
     ttsEngine: 'openai',

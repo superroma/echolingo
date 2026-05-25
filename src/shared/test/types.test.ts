@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   LANG_CODES,
   LESSON_LENGTHS,
-  LESSON_STYLES,
   LESSON_MODES,
   BILINGUAL_ORDERS,
   TTS_ENGINES,
@@ -12,10 +11,6 @@ import {
 describe('domain enums', () => {
   it('exposes the four length presets', () => {
     expect(LESSON_LENGTHS).toEqual([5, 10, 20, 30]);
-  });
-
-  it('exposes the three styles', () => {
-    expect(LESSON_STYLES).toEqual(['mono', 'dialogue', 'story']);
   });
 
   it('exposes the two modes', () => {
@@ -44,7 +39,6 @@ describe('isLessonParams', () => {
     nativeLang: 'en',
     lengthMin: 10,
     level: 3,
-    style: 'dialogue',
     mode: 'bilingual',
     bilingualOrder: 'target_first',
     ttsEngine: 'openai',
@@ -67,8 +61,7 @@ describe('isLessonParams', () => {
     expect(isLessonParams({ ...valid, level: 6 })).toBe(false);
   });
 
-  it('rejects unknown style/mode/order/engine', () => {
-    expect(isLessonParams({ ...valid, style: 'rap' })).toBe(false);
+  it('rejects unknown mode/order/engine', () => {
     expect(isLessonParams({ ...valid, mode: 'greek_only' })).toBe(false);
     expect(isLessonParams({ ...valid, bilingualOrder: 'gr_first' })).toBe(false);
     expect(isLessonParams({ ...valid, ttsEngine: 'aws' })).toBe(false);

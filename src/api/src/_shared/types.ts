@@ -24,9 +24,6 @@ export type LessonLength = (typeof LESSON_LENGTHS)[number];
 export const LESSON_LEVELS = [1, 2, 3, 4, 5] as const;
 export type LessonLevel = (typeof LESSON_LEVELS)[number];
 
-export const LESSON_STYLES = ['mono', 'dialogue', 'story'] as const;
-export type LessonStyle = (typeof LESSON_STYLES)[number];
-
 export const LESSON_MODES = ['target_only', 'bilingual'] as const;
 export type LessonMode = (typeof LESSON_MODES)[number];
 
@@ -42,7 +39,6 @@ export interface LessonParams {
   nativeLang: LangCode;
   lengthMin: LessonLength;
   level: LessonLevel;
-  style: LessonStyle;
   mode: LessonMode;
   bilingualOrder: BilingualOrder;
   ttsEngine: TtsEngineName;
@@ -90,7 +86,6 @@ export function isLessonParams(v: unknown): v is LessonParams {
   if (o.targetLang === o.nativeLang) return false;
   if (!LESSON_LENGTHS.includes(o.lengthMin as LessonLength)) return false;
   if (!LESSON_LEVELS.includes(o.level as LessonLevel)) return false;
-  if (!LESSON_STYLES.includes(o.style as LessonStyle)) return false;
   if (!LESSON_MODES.includes(o.mode as LessonMode)) return false;
   if (!BILINGUAL_ORDERS.includes(o.bilingualOrder as BilingualOrder)) return false;
   if (!TTS_ENGINES.includes(o.ttsEngine as TtsEngineName)) return false;

@@ -11,7 +11,6 @@ function lesson(overrides: Partial<Lesson> = {}): Lesson {
       nativeLang: 'en',
       lengthMin: 5,
       level: 3,
-      style: 'dialogue',
       mode: 'bilingual',
       bilingualOrder: 'target_first',
       ttsEngine: 'openai',
