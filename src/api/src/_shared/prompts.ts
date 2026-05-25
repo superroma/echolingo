@@ -1,4 +1,4 @@
-import { LANG_NAME, type LessonParams, type LessonStyle, type LessonLevel } from './types.js';
+import { LANG_NAME, type LessonParams, type LessonLevel } from './types.js';
 
 const WORDS_PER_MINUTE = 130;
 
@@ -8,13 +8,6 @@ const LEVEL_DESCRIPTOR: Record<LessonLevel, string> = {
   3: 'level 3 (intermediate — everyday vocabulary, common tenses, natural sentence length)',
   4: 'level 4 (upper-intermediate — richer vocabulary, varied tenses and subordination)',
   5: 'level 5 (advanced — idiomatic vocabulary, complex grammar, long varied sentences)',
-};
-
-const STYLE_INSTRUCTION: Record<LessonStyle, string> = {
-  mono: 'Write a single-narrator monologue (essay-like) on the topic.',
-  dialogue:
-    'Write a natural dialogue between two named speakers on the topic. Prefix each line with the speaker name and a colon, e.g. "Maria: ...".',
-  story: 'Write a short narrative story on the topic with a clear setting and small plot.',
 };
 
 export interface BuiltPrompt {
@@ -27,7 +20,6 @@ export function buildPrompt(params: LessonParams): BuiltPrompt {
   const targetName = LANG_NAME[params.targetLang];
   const nativeName = LANG_NAME[params.nativeLang];
   const level = LEVEL_DESCRIPTOR[params.level];
-  const styleInstruction = STYLE_INSTRUCTION[params.style];
 
   const system =
     `You are a ${targetName} language tutor producing bilingual listening lessons. ` +
@@ -37,7 +29,6 @@ export function buildPrompt(params: LessonParams): BuiltPrompt {
     `Topic: ${params.topic}`,
     `Target length: approximately ${targetWords} words of spoken ${targetName}.`,
     `${targetName} difficulty: ${level}.`,
-    styleInstruction,
     '',
     'OUTPUT FORMAT (strict):',
     `- One line per sentence pair, in the form: ${targetName.toUpperCase()}_SENTENCE||${nativeName.toUpperCase()}_SENTENCE`,
