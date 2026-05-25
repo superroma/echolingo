@@ -1,8 +1,8 @@
 {
   "routes": [
     {
-      "route": "/lesson/*",
-      "rewrite": "/lesson/shell/index.html"
+      "route": "/echo/*",
+      "rewrite": "/echo/shell/index.html"
     }
   ],
   "navigationFallback": {
