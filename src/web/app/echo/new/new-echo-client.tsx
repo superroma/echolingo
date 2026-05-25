@@ -34,7 +34,7 @@ function readParamsFromUrl(): LessonParams | null {
     nativeLang,
     lengthMin,
     level,
-    style: 'dialogue',
+    style: 'mono',
     mode: 'bilingual',
     bilingualOrder: 'target_first',
     ttsEngine: 'openai',
