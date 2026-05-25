@@ -1,9 +1,8 @@
 {
   "routes": [
-    {
-      "route": "/echo/*",
-      "rewrite": "/echo/shell/index.html"
-    }
+    { "route": "/echo/new", "rewrite": "/echo/new/index.html" },
+    { "route": "/echo/new/*", "rewrite": "/echo/new/index.html" },
+    { "route": "/echo/*", "rewrite": "/echo/shell/index.html" }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
