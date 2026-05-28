@@ -6,6 +6,7 @@ import type { Lesson, LessonParams } from '@echolingo/shared/types';
 import { useEcho } from '../hooks/use-echo';
 import { usePlayer } from '../hooks/use-player';
 import { useEchoes } from '../hooks/use-echoes';
+import { AppBar } from './app-bar';
 import { EchoProgress } from './echo-progress';
 import { PlayerControlsView } from './player-controls';
 import { TranscriptView } from './transcript-view';
@@ -307,21 +308,9 @@ function PageFrame({
   pad?: boolean;
   children: React.ReactNode;
 }) {
-  const router = useRouter();
   return (
     <div className={`min-h-screen ${pad ? 'pb-40' : ''}`}>
-      <header className="sticky top-0 z-10 flex h-12 items-center border-b border-hairline bg-paper/95 px-3 backdrop-blur">
-        <button
-          type="button"
-          onClick={() => router.push('/')}
-          className="rounded p-1 text-ink-muted hover:text-ink"
-          aria-label="Back"
-        >
-          ←
-        </button>
-        <h1 className="mx-auto max-w-[60%] truncate text-sm font-medium text-ink">{title}</h1>
-        <span className="w-7" aria-hidden />
-      </header>
+      <AppBar title={title} />
       <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
     </div>
   );
