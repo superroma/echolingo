@@ -42,7 +42,7 @@ test.describe('create echo flow', () => {
     await expect(page).toHaveURL(new RegExp(`/echo/${id}/?$`));
 
     // Go back to home — echo should be in the list
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('link', { name: 'echolingo' }).click();
     await expect(page).toHaveURL('http://localhost:3000/');
     await expect(page.getByText('a walk through Plaka')).toBeVisible();
   });

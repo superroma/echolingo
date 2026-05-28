@@ -3,7 +3,7 @@ import { test, expect } from './fixture';
 test.describe('home page', () => {
   test('renders title, form, and empty echoes list', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'echolingo' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'echolingo' })).toBeVisible();
     await expect(page.getByPlaceholder(/at the bakery/i)).toBeVisible();
     await expect(page.getByLabel('I speak')).toBeVisible();
     await expect(page.getByLabel('Learning')).toBeVisible();
