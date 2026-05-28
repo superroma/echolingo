@@ -34,7 +34,9 @@ test.describe('create echo flow', () => {
   }) => {
     const id = 'persisted-1';
     await mockCreateLesson(page, { kind: 'created', id });
-    await mockGetLesson(page, id, [{ id, status: 'generating_script' }]);
+    await mockGetLesson(page, id, [
+      { id, status: 'generating_script', topic: 'a walk through Plaka' },
+    ]);
 
     await page.goto('/');
     await page.getByPlaceholder(/at the bakery/i).fill('a walk through Plaka');
