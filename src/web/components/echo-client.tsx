@@ -114,6 +114,22 @@ function ExistingEcho({ id }: { id: string }) {
   const state = useEcho(id);
   const [retrying, setRetrying] = useState<CreateState | null>(null);
 
+  const adoptedRef = useRef(false);
+  useEffect(() => {
+    if (state.kind !== 'ok' || adoptedRef.current) return;
+    adoptedRef.current = true;
+    addEcho({
+      id,
+      topic: state.echo.params.topic,
+      targetLang: state.echo.params.targetLang,
+      nativeLang: state.echo.params.nativeLang,
+      lengthMin: state.echo.params.lengthMin,
+      level: state.echo.params.level,
+      createdAt: state.echo.createdAt,
+      lastStatus: state.echo.status,
+    });
+  }, [state, id, addEcho]);
+
   useEffect(() => {
     if (state.kind === 'ok') {
       updateEcho(id, {
