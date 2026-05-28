@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { AppBar } from './app-bar';
 import { CreateEchoForm } from './create-echo-form';
 import { EchoesList } from './echoes-list';
 import { useEchoes } from '../hooks/use-echoes';
@@ -39,17 +40,15 @@ export function HomeClient() {
   }, [hydrated, echoes, updateEcho]);
 
   return (
-    <main className="mx-auto max-w-md px-5 py-10">
-      <header className="mb-8 text-center">
-        <h1 className="font-serif text-5xl lowercase tracking-tight text-ink">
-          echolingo
-        </h1>
-        <p className="mt-1 text-sm text-ink-muted">
+    <>
+      <AppBar />
+      <main className="mx-auto max-w-md px-5 py-8">
+        <p className="mb-6 text-center text-sm text-ink-muted">
           listening lessons, on demand
         </p>
-      </header>
-      <CreateEchoForm />
-      <EchoesList echoes={echoes} hydrated={hydrated} onRemove={removeEcho} />
-    </main>
+        <CreateEchoForm />
+        <EchoesList echoes={echoes} hydrated={hydrated} onRemove={removeEcho} />
+      </main>
+    </>
   );
 }
