@@ -15,7 +15,6 @@ export function AppBar({ title, showNew = false }: AppBarProps) {
     <header className="sticky top-0 z-30 grid grid-cols-[auto_1fr_auto] items-center gap-2.5 border-b border-line-soft bg-paper/[0.86] px-[18px] pb-[13px] pt-[max(13px,env(safe-area-inset-top))] backdrop-blur-[14px]">
       <Link
         href="/"
-        aria-label="home"
         className="font-serif text-[21px] font-semibold leading-none tracking-[-0.01em] text-ink"
       >
         echolingo<span className="text-accent">.</span>
@@ -23,7 +22,7 @@ export function AppBar({ title, showNew = false }: AppBarProps) {
 
       <div className="min-w-0">
         {title && (
-          <div className="truncate text-center font-serif text-[17px] font-semibold text-ink">{title}</div>
+          <h1 className="truncate text-center font-serif text-[17px] font-semibold text-ink">{title}</h1>
         )}
       </div>
 

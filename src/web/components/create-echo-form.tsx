@@ -98,11 +98,11 @@ export function CreateEchoForm({ showSuggestions = false }: { showSuggestions?: 
       <div className="grid grid-cols-2 items-end gap-3">
         <div>
           <Label>I speak</Label>
-          <LangSelect value={prefs.nativeLang} disabledValue={prefs.targetLang} onChange={pickNative} />
+          <LangSelect label="I speak" value={prefs.nativeLang} disabledValue={prefs.targetLang} onChange={pickNative} />
         </div>
         <div>
           <Label>learning</Label>
-          <LangSelect value={prefs.targetLang} disabledValue={prefs.nativeLang} onChange={pickTarget} />
+          <LangSelect label="learning" value={prefs.targetLang} disabledValue={prefs.nativeLang} onChange={pickTarget} />
         </div>
       </div>
 

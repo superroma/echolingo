@@ -8,10 +8,12 @@ export function LangSelect({
   value,
   disabledValue,
   onChange,
+  label,
 }: {
   value: LangCode;
   disabledValue: LangCode;
   onChange: (c: LangCode) => void;
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -30,6 +32,9 @@ export function LangSelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         className="flex h-[54px] w-full items-center justify-between rounded-[16px] border border-line bg-paper-3 px-4 text-[17px] font-medium text-ink shadow-[var(--shadow-1)]"
       >
         <span>{LANG_NAME[value]}</span>
@@ -45,6 +50,9 @@ export function LangSelect({
             return (
               <div
                 key={code}
+                role="option"
+                aria-selected={isActive}
+                aria-disabled={isDisabled}
                 onClick={() => {
                   if (isDisabled) return;
                   onChange(code);
