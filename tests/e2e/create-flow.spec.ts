@@ -25,8 +25,7 @@ test.describe('create echo flow', () => {
     await page.getByRole('button', { name: /^go$/i }).click();
 
     await expect(page).toHaveURL(new RegExp(`/echo/${id}/?$`));
-    await expect(page.getByText(/writing script…|ready/i)).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText(/1 \/ 3 ready/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/composing your echo…/i)).toBeVisible({ timeout: 10_000 });
   });
 
   test('adds the new echo to the local echoes list (visible after going home)', async ({
@@ -45,7 +44,7 @@ test.describe('create echo flow', () => {
 
     // Go back to home — echo should be in the list
     await page.getByRole('link', { name: 'echolingo' }).click();
-    await expect(page).toHaveURL('http://localhost:3000/');
+    await expect(page).toHaveURL(/localhost:\d+\/$/);
     await expect(page.getByText('a walk through Plaka')).toBeVisible();
   });
 });

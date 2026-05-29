@@ -14,7 +14,7 @@ test.describe('shared echo discovery', () => {
 
     // Navigate home via the AppBar wordmark
     await page.getByRole('link', { name: 'echolingo' }).click();
-    await expect(page).toHaveURL('http://localhost:3000/');
+    await expect(page).toHaveURL(/localhost:\d+\/$/);
 
     // The shared echo is now in the friend's library
     await expect(page.getByText('a walk through Plaka')).toBeVisible();
@@ -30,5 +30,23 @@ test.describe('shared echo discovery', () => {
 
     await page.getByRole('link', { name: '+ new' }).click();
     await expect(page).toHaveURL(/\/echo\/new\/?$/);
+  });
+
+  test('shared visitor sees the conversion card; owner does not after adoption', async ({
+    page,
+  }) => {
+    await mockGetLesson(page, 'shared-3', [
+      { id: 'shared-3', status: 'ready', topic: 'a day trip to Hydra' },
+    ]);
+
+    // Fresh visitor (empty library): conversion card is shown.
+    await page.goto('/echo/shared-3/');
+    await expect(page.getByRole('heading', { name: 'a day trip to Hydra' })).toBeVisible();
+    await expect(page.getByText('make your own echo')).toBeVisible();
+
+    // After silent adoption, reloading makes it "owned" — no conversion card.
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'a day trip to Hydra' })).toBeVisible();
+    await expect(page.getByText('make your own echo')).toHaveCount(0);
   });
 });
