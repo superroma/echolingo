@@ -48,7 +48,7 @@ function isEcho(v: unknown): v is Echo {
     LESSON_LENGTHS.includes(o.lengthMin as LessonLength) &&
     typeof o.level === 'number' &&
     o.level >= 1 &&
-    o.level <= 5 &&
+    o.level <= 6 &&
     typeof o.createdAt === 'string' &&
     VALID_STATUSES.includes(o.lastStatus as LessonStatus)
   );

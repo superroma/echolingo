@@ -58,7 +58,7 @@ export function loadPrefs(storage: PrefsStorage): FormPrefs {
       ? (parsed.lengthMin as LessonLength)
       : DEFAULT_PREFS.lengthMin,
     level:
-      typeof parsed.level === 'number' && parsed.level >= 1 && parsed.level <= 5
+      typeof parsed.level === 'number' && parsed.level >= 1 && parsed.level <= 6
         ? (parsed.level as LessonLevel)
         : DEFAULT_PREFS.level,
   };

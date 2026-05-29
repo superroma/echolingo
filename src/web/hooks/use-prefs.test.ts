@@ -45,6 +45,18 @@ describe('FormPrefs persistence', () => {
     expect(result.level).toBe(DEFAULT_PREFS.level);
   });
 
+  it('loadPrefs accepts CEFR level 6', () => {
+    const storage = fakeStorage();
+    storage.setItem('echolingo:prefs', JSON.stringify({ level: 6 }));
+    expect(loadPrefs(storage).level).toBe(6);
+  });
+
+  it('loadPrefs rejects level 7 and falls back to default', () => {
+    const storage = fakeStorage();
+    storage.setItem('echolingo:prefs', JSON.stringify({ level: 7 }));
+    expect(loadPrefs(storage).level).toBe(DEFAULT_PREFS.level);
+  });
+
   it('savePrefs strips the topic — topic is never remembered', () => {
     const storage = fakeStorage();
     savePrefs(storage, { ...DEFAULT_PREFS, topic: 'leaked' as unknown as never });
