@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
   LANG_CODES,
+  LESSON_LEVELS,
   LESSON_LENGTHS,
   LESSON_MODES,
   BILINGUAL_ORDERS,
   TTS_ENGINES,
+  CEFR_LABEL,
+  cefr,
   isLessonParams,
+  type LessonParams,
 } from '../src/types.js';
 
 describe('domain enums', () => {
@@ -56,9 +60,9 @@ describe('isLessonParams', () => {
     expect(isLessonParams({ ...valid, lengthMin: 7 })).toBe(false);
   });
 
-  it('rejects level outside 1..5', () => {
+  it('rejects level outside 1..6', () => {
     expect(isLessonParams({ ...valid, level: 0 })).toBe(false);
-    expect(isLessonParams({ ...valid, level: 6 })).toBe(false);
+    expect(isLessonParams({ ...valid, level: 7 })).toBe(false);
   });
 
   it('rejects unknown mode/order/engine', () => {
@@ -83,5 +87,36 @@ describe('isLessonParams', () => {
   it('accepts widened native languages beyond en/ru', () => {
     expect(isLessonParams({ ...valid, nativeLang: 'es' })).toBe(true);
     expect(isLessonParams({ ...valid, nativeLang: 'ja' })).toBe(true);
+  });
+});
+
+describe('CEFR levels', () => {
+  it('has six levels 1..6', () => {
+    expect(LESSON_LEVELS).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it('maps each level to a CEFR band', () => {
+    expect(CEFR_LABEL).toEqual({ 1: 'A1', 2: 'A2', 3: 'B1', 4: 'B2', 5: 'C1', 6: 'C2' });
+  });
+
+  it('cefr() returns the label, clamping out-of-range input', () => {
+    expect(cefr(3)).toBe('B1');
+    expect(cefr(6)).toBe('C2');
+    expect(cefr(0 as never)).toBe('A1');
+    expect(cefr(99 as never)).toBe('C2');
+  });
+
+  it('accepts level 6 in isLessonParams', () => {
+    const params: LessonParams = {
+      topic: 'at the bakery',
+      targetLang: 'el',
+      nativeLang: 'en',
+      lengthMin: 5,
+      level: 6,
+      mode: 'bilingual',
+      bilingualOrder: 'target_first',
+      ttsEngine: 'openai',
+    };
+    expect(isLessonParams(params)).toBe(true);
   });
 });
