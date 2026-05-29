@@ -11,7 +11,7 @@ import { EchoProgress } from './echo-progress';
 import { PlayerControlsView } from './player-controls';
 import { TranscriptView } from './transcript-view';
 import { isSharedVisit, ShareContextStrip, ConversionCard } from './share-affordances';
-import { buildPlaylist } from '@echolingo/shared/playlist';
+import { playablePlaylist } from '@echolingo/shared/playlist';
 import {
   cumulativeDurations,
   totalDuration,
@@ -154,15 +154,30 @@ function ExistingEcho({ id }: { id: string }) {
     }
   }, [state, id, updateEcho]);
 
-  const playlist = useMemo(
-    () =>
-      state.kind === 'ok' && state.echo.status === 'ready'
-        ? buildPlaylist(state.echo)
-        : [],
-    [state],
-  );
-  const player = usePlayer(playlist, id);
   const bilingual = state.kind === 'ok' && state.echo.params.mode === 'bilingual';
+
+  // When translation is hidden, also drop the native audio so it isn't played
+  // aloud — not just hidden in the transcript.
+  const playlist = useMemo(() => {
+    if (!(state.kind === 'ok' && state.echo.status === 'ready')) return [];
+    return playablePlaylist(state.echo, showTranslation);
+  }, [state, showTranslation]);
+  const player = usePlayer(playlist, id);
+
+  // Toggling translation rebuilds the playlist (entries shift). Capture the
+  // sentence at click time and re-anchor to it once the new playlist is in,
+  // so playback stays on the same line instead of jumping by raw index.
+  const anchorSentenceRef = useRef<number | null>(null);
+  function toggleTranslation() {
+    anchorSentenceRef.current = player.state.currentSentence;
+    setShowTranslation((v) => !v);
+  }
+  useEffect(() => {
+    if (anchorSentenceRef.current === null) return;
+    const target = anchorSentenceRef.current;
+    anchorSentenceRef.current = null;
+    player.controls.jumpToSentence(target);
+  }, [playlist, player.controls]);
 
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   useEffect(() => {
@@ -368,7 +383,7 @@ function ExistingEcho({ id }: { id: string }) {
             onSeek={onSeek}
             bilingual={bilingual}
             showTranslation={showTranslation}
-            onToggleTranslation={() => setShowTranslation((v) => !v)}
+            onToggleTranslation={toggleTranslation}
           />
         </div>
       </div>

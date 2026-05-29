@@ -20,7 +20,7 @@ test.describe('shared echo discovery', () => {
     await expect(page.getByText('a walk through Plaka')).toBeVisible();
   });
 
-  test('AppBar +new pill navigates from the echo screen to the create form', async ({ page }) => {
+  test('AppBar +new pill lands on the working create form (not an error page)', async ({ page }) => {
     await mockGetLesson(page, 'shared-2', [
       { id: 'shared-2', status: 'ready', topic: 'morning at the bakery' },
     ]);
@@ -29,7 +29,11 @@ test.describe('shared echo discovery', () => {
     await expect(page.getByRole('heading', { name: 'morning at the bakery' })).toBeVisible();
 
     await page.getByRole('link', { name: '+ new' }).click();
-    await expect(page).toHaveURL(/\/echo\/new\/?$/);
+    // Must reach the create surface (home), with a usable form — NOT /echo/new
+    // with no params, which renders "Missing or invalid parameters."
+    await expect(page).toHaveURL(/localhost:\d+\/$/);
+    await expect(page.getByPlaceholder(/at the bakery/i)).toBeVisible();
+    await expect(page.getByText(/missing or invalid/i)).toHaveCount(0);
   });
 
   test('shared visitor sees the conversion card; owner does not after adoption', async ({

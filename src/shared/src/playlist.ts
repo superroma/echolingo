@@ -45,3 +45,16 @@ export function buildPlaylist(lesson: Lesson): PlaylistEntry[] {
   }
   return out;
 }
+
+/**
+ * The playlist to actually play. When a bilingual lesson has its translation
+ * turned off, the native-language audio is dropped (not just hidden in the
+ * transcript) so it isn't read aloud. Target-only lessons are unaffected.
+ */
+export function playablePlaylist(lesson: Lesson, includeTranslation: boolean): PlaylistEntry[] {
+  const full = buildPlaylist(lesson);
+  if (lesson.params.mode === 'bilingual' && !includeTranslation) {
+    return full.filter((e) => e.lang === 'gr');
+  }
+  return full;
+}

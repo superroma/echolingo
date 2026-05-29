@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPlaylist } from '../src/playlist.js';
+import { buildPlaylist, playablePlaylist } from '../src/playlist.js';
 import type { Lesson } from '../src/types.js';
 
 function lesson(overrides: Partial<Lesson> = {}): Lesson {
@@ -98,5 +98,24 @@ describe('buildPlaylist', () => {
       '1-gr',
       '1-native',
     ]);
+  });
+});
+
+describe('playablePlaylist', () => {
+  it('includes both languages when translation is on', () => {
+    const entries = playablePlaylist(lesson(), true);
+    expect(entries.map((e) => e.lang)).toEqual(['gr', 'native', 'gr', 'native']);
+  });
+
+  it('drops native audio when translation is off (not just hidden)', () => {
+    const entries = playablePlaylist(lesson(), false);
+    expect(entries.map((e) => e.lang)).toEqual(['gr', 'gr']);
+    expect(entries.some((e) => e.lang === 'native')).toBe(false);
+  });
+
+  it('is unaffected for target_only lessons', () => {
+    const l = lesson({ params: { ...lesson().params, mode: 'target_only' } });
+    expect(playablePlaylist(l, false)).toEqual(buildPlaylist(l));
+    expect(playablePlaylist(l, true)).toEqual(buildPlaylist(l));
   });
 });
