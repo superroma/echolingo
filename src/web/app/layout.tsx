@@ -2,7 +2,6 @@ import './globals.css';
 import type { ReactNode } from 'react';
 import Script from 'next/script';
 import { IBM_Plex_Sans, Literata } from 'next/font/google';
-import { InstallPanel } from '../components/install-panel';
 
 const sans = IBM_Plex_Sans({
   subsets: ['latin', 'cyrillic'],
@@ -42,7 +41,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="min-h-screen bg-paper font-sans text-ink antialiased">
         {children}
-        <InstallPanel />
         <Script id="register-sw" strategy="afterInteractive">
           {`
             if ('serviceWorker' in navigator) {

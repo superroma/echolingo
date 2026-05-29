@@ -22,3 +22,16 @@ export function isStandalone(env: {
 }): boolean {
   return env.standaloneMatch || env.navigatorStandalone === true;
 }
+
+/** Dismissing the install panel suppresses it for this long (one week). */
+export const INSTALL_DISMISS_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * True when a stored dismissal timestamp is still within the suppression
+ * window — i.e. the panel was dismissed less than a week ago and should stay
+ * hidden. Returns false for missing/invalid timestamps.
+ */
+export function isDismissActive(dismissedAtMs: number | null, nowMs: number): boolean {
+  if (dismissedAtMs === null || !Number.isFinite(dismissedAtMs)) return false;
+  return nowMs - dismissedAtMs < INSTALL_DISMISS_MS;
+}

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { AppBar } from './app-bar';
 import { CreateEchoForm } from './create-echo-form';
 import { EchoesList } from './echoes-list';
+import { InstallPanel } from './install-panel';
 import { useEchoes } from '../hooks/use-echoes';
 import { getLesson } from '../lib/api';
 
@@ -41,6 +42,7 @@ export function HomeClient() {
   return (
     <>
       <AppBar />
+      <InstallPanel />
       <main className="mx-auto max-w-md px-6 pb-7 pt-[18px]">
         {firstRun && (
           <div className="px-2 pb-[18px] pt-1.5 text-center">
