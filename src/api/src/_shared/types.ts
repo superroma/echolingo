@@ -21,8 +21,23 @@ export const LANG_NAME: Record<LangCode, string> = {
 export const LESSON_LENGTHS = [5, 10, 20, 30] as const;
 export type LessonLength = (typeof LESSON_LENGTHS)[number];
 
-export const LESSON_LEVELS = [1, 2, 3, 4, 5] as const;
+export const LESSON_LEVELS = [1, 2, 3, 4, 5, 6] as const;
 export type LessonLevel = (typeof LESSON_LEVELS)[number];
+
+export const CEFR_LABEL: Record<LessonLevel, string> = {
+  1: 'A1',
+  2: 'A2',
+  3: 'B1',
+  4: 'B2',
+  5: 'C1',
+  6: 'C2',
+};
+
+/** CEFR band label for a level, clamping out-of-range input to the nearest end. */
+export function cefr(level: number): string {
+  const n = Math.min(6, Math.max(1, Math.round(level))) as LessonLevel;
+  return CEFR_LABEL[n];
+}
 
 export const LESSON_MODES = ['target_only', 'bilingual'] as const;
 export type LessonMode = (typeof LESSON_MODES)[number];

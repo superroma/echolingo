@@ -3,11 +3,12 @@ import { LANG_NAME, type LessonParams, type LessonLevel } from './types.js';
 const WORDS_PER_MINUTE = 130;
 
 const LEVEL_DESCRIPTOR: Record<LessonLevel, string> = {
-  1: 'level 1 (beginner — very simple vocabulary, short present-tense sentences)',
-  2: 'level 2 (high beginner — common vocabulary, simple past/present, short sentences)',
-  3: 'level 3 (intermediate — everyday vocabulary, common tenses, natural sentence length)',
-  4: 'level 4 (upper-intermediate — richer vocabulary, varied tenses and subordination)',
-  5: 'level 5 (advanced — idiomatic vocabulary, complex grammar, long varied sentences)',
+  1: 'CEFR A1 (beginner — very simple high-frequency vocabulary, short present-tense sentences)',
+  2: 'CEFR A2 (elementary — common everyday vocabulary, simple past/present, short sentences)',
+  3: 'CEFR B1 (intermediate — everyday vocabulary, common tenses, natural sentence length)',
+  4: 'CEFR B2 (upper-intermediate — richer vocabulary, varied tenses and subordination)',
+  5: 'CEFR C1 (advanced — idiomatic vocabulary, complex grammar, long varied sentences)',
+  6: 'CEFR C2 (mastery — nuanced, idiomatic, sophisticated register and structure)',
 };
 
 export interface BuiltPrompt {

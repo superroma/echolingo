@@ -31,3 +31,15 @@ describe('buildPrompt — templated languages', () => {
     expect(user).toMatch(/GREEK_SENTENCE\|\|ENGLISH_SENTENCE/);
   });
 });
+
+describe('buildPrompt — CEFR levels', () => {
+  it('describes level 6 as CEFR C2', () => {
+    const { user } = buildPrompt(lessonParams({ level: 6 }));
+    expect(user).toMatch(/C2/);
+  });
+
+  it('describes level 1 as CEFR A1', () => {
+    const { user } = buildPrompt(lessonParams({ level: 1 }));
+    expect(user).toMatch(/A1/);
+  });
+});
