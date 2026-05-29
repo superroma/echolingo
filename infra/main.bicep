@@ -30,6 +30,9 @@ param ttsModelVersion string = '001'
 @description('Quota in thousand tokens per minute for each deployment.')
 param deploymentQuotaTpm int = 150
 
+@description('Apex domain hosted in Azure DNS for the public site. Empty disables the DNS zone.')
+param domainName string = 'echolingo.audio'
+
 var resourceToken = uniqueString(subscription().id, environmentName, location)
 var tags = {
   'azd-env-name': environmentName
@@ -112,6 +115,15 @@ module roleAssignments './modules/role-assignments.bicep' = {
   }
 }
 
+module dns './modules/dns.bicep' = if (!empty(domainName)) {
+  scope: rg
+  name: 'dns'
+  params: {
+    domainName: domainName
+    tags: tags
+  }
+}
+
 module staticWebApp './modules/static-web-app.bicep' = {
   scope: rg
   name: 'staticWebApp'
@@ -133,3 +145,5 @@ output FUNCTION_APP_NAME string = functionApp.outputs.functionAppName
 output FUNCTION_APP_URL string = 'https://${functionApp.outputs.defaultHostname}'
 output WEB_URL string = staticWebApp.outputs.defaultHostname
 output NEXT_PUBLIC_API_BASE_URL string = 'https://${functionApp.outputs.defaultHostname}'
+output DNS_ZONE_NAME string = empty(domainName) ? '' : dns.outputs.dnsZoneName
+output DNS_NAME_SERVERS array = empty(domainName) ? [] : dns.outputs.dnsNameServers
