@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { LANG_NAME, type LessonStatus } from '@echolingo/shared/types';
+import { LANG_NAME, cefr } from '@echolingo/shared/types';
 import type { Echo } from '../hooks/use-echoes';
+import { PlayIcon } from './icons';
 
 export function EchoesList({
   echoes,
@@ -13,46 +14,65 @@ export function EchoesList({
   hydrated: boolean;
   onRemove: (id: string) => void;
 }) {
-  if (!hydrated) return null;
+  if (!hydrated || echoes.length === 0) return null;
   return (
-    <section className="mt-10 space-y-3">
-      <h2 className="font-serif text-2xl lowercase tracking-tight text-ink">echoes</h2>
-      {echoes.length === 0 ? (
-        <p className="text-sm text-ink-muted">your echoes will appear here</p>
-      ) : (
-        <ul className="divide-y divide-hairline">
-          {echoes.map((echo) => (
-            <EchoRow key={echo.id} echo={echo} onRemove={onRemove} />
-          ))}
-        </ul>
-      )}
+    <section className="mt-[26px]">
+      <h2 className="text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-mute">your echoes</h2>
+      <ul className="mt-1 pb-7">
+        {echoes.map((echo) => (
+          <EchoRow key={echo.id} echo={echo} onRemove={onRemove} />
+        ))}
+      </ul>
     </section>
   );
 }
 
+function progressOf(echo: Echo): number {
+  try {
+    const pos = Number(localStorage.getItem(`echo:pos:${echo.id}`));
+    if (!pos || Number.isNaN(pos)) return 0;
+    const total = echo.lengthMin * 60;
+    return Math.min(1, Math.max(0, pos / total));
+  } catch {
+    return 0;
+  }
+}
+
 function EchoRow({ echo, onRemove }: { echo: Echo; onRemove: (id: string) => void }) {
   const router = useRouter();
+  const p = progressOf(echo);
+  const done = p >= 1;
+  const partial = p > 0 && p < 1;
+  const isNew = p === 0;
   return (
-    <li className="group flex items-start gap-3 py-3">
+    <li className="group flex items-center gap-3.5 border-b border-line-soft py-4 last:border-b-0">
       <button
         type="button"
         onClick={() => router.push(`/echo/${echo.id}/`)}
-        className="flex-1 text-left"
+        className="flex flex-1 items-center gap-3.5 text-left"
       >
-        <p className="truncate font-serif text-base text-ink">{echo.topic}</p>
-        <p className="mt-0.5 text-xs text-ink-muted">
-          {LANG_NAME[echo.targetLang].toLowerCase()} · {echo.lengthMin} min · L{echo.level}
-          <span className="px-1.5 text-ink-faint">·</span>
-          <RelativeTime iso={echo.createdAt} />
-        </p>
+        <span className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-line bg-paper-3 text-ink shadow-[var(--shadow-1)]">
+          {partial && <ProgressRing p={p} />}
+          <PlayIcon size={18} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-serif text-[18px] font-semibold tracking-[-0.01em] text-ink">
+            {echo.topic}
+          </span>
+          <span className="mt-[3px] block text-[13px] text-ink-mute">
+            <span className="font-semibold capitalize text-accent">{LANG_NAME[echo.targetLang]}</span> ·{' '}
+            {echo.lengthMin} min · {cefr(echo.level)}
+            {done ? ' · finished' : ''} · <RelativeTime iso={echo.createdAt} />
+          </span>
+        </span>
       </button>
-      <StatusDot status={echo.lastStatus} />
+      {isNew && <span className="h-[9px] w-[9px] flex-shrink-0 rounded-full bg-accent" />}
       <button
         type="button"
         onClick={() => {
           if (confirm('Remove this echo from your list?')) onRemove(echo.id);
         }}
-        className="rounded p-1 text-ink-faint opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
+        className="rounded p-1 text-ink-mute opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
         aria-label="Remove echo"
       >
         ×
@@ -61,26 +81,30 @@ function EchoRow({ echo, onRemove }: { echo: Echo; onRemove: (id: string) => voi
   );
 }
 
-function StatusDot({ status }: { status: LessonStatus }) {
-  const cls =
-    status === 'ready'
-      ? 'bg-ink'
-      : status === 'failed'
-      ? 'border border-terracotta'
-      : 'animate-pulse bg-aegean';
+function ProgressRing({ p }: { p: number }) {
+  const r = 21;
+  const c = 2 * Math.PI * r;
   return (
-    <span
-      className={`mt-1.5 inline-block h-2 w-2 rounded-full ${cls}`}
-      aria-label={`status: ${status}`}
-    />
+    <svg className="absolute -inset-px -rotate-90" width="44" height="44" viewBox="0 0 44 44" aria-hidden>
+      <circle
+        cx="22"
+        cy="22"
+        r={r}
+        fill="none"
+        stroke="var(--accent)"
+        strokeWidth="2"
+        strokeDasharray={c}
+        strokeDashoffset={c * (1 - p)}
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
 function RelativeTime({ iso }: { iso: string }) {
   const ms = Date.now() - new Date(iso).getTime();
   if (Number.isNaN(ms)) return null;
-  const text = formatRelative(ms);
-  return <span>{text}</span>;
+  return <span>{formatRelative(ms)}</span>;
 }
 
 export function formatRelative(ms: number): string {
