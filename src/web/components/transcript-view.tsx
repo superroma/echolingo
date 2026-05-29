@@ -6,55 +6,63 @@ import type { Lesson, Sentence } from '@echolingo/shared/types';
 export function TranscriptView({
   lesson,
   currentSentence,
+  showNative,
   onJump,
 }: {
   lesson: Lesson;
   currentSentence: number;
+  showNative: boolean;
   onJump: (sentenceIdx: number) => void;
 }) {
   const containerRef = useRef<HTMLOListElement | null>(null);
   const currentRef = useRef<HTMLLIElement | null>(null);
   const manualScrollUntil = useRef<number>(0);
 
+  // The scroll region is the transcript's parent (so a shared-link strip/card
+  // scroll together with the lines); fall back to the list itself.
+  function scrollBox(): HTMLElement | null {
+    return containerRef.current?.parentElement ?? containerRef.current;
+  }
+
   useEffect(() => {
-    const c = containerRef.current;
-    if (!c) return;
-    const onWheel = () => {
-      manualScrollUntil.current = Date.now() + 5000;
+    const box = scrollBox();
+    if (!box) return;
+    const onManual = () => {
+      manualScrollUntil.current = Date.now() + 2600;
     };
-    c.addEventListener('wheel', onWheel, { passive: true });
-    c.addEventListener('touchmove', onWheel, { passive: true });
+    box.addEventListener('wheel', onManual, { passive: true });
+    box.addEventListener('touchmove', onManual, { passive: true });
     return () => {
-      c.removeEventListener('wheel', onWheel);
-      c.removeEventListener('touchmove', onWheel);
+      box.removeEventListener('wheel', onManual);
+      box.removeEventListener('touchmove', onManual);
     };
   }, []);
 
   useEffect(() => {
     if (Date.now() < manualScrollUntil.current) return;
     const el = currentRef.current;
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const box = scrollBox();
+    if (!el || !box) return;
+    const elRect = el.getBoundingClientRect();
+    const boxRect = box.getBoundingClientRect();
+    const delta = elRect.top - boxRect.top - box.clientHeight * 0.3;
+    box.scrollBy({ top: delta, behavior: 'smooth' });
   }, [currentSentence]);
 
   return (
-    <ol ref={containerRef} className="space-y-1 pb-32">
+    <ol ref={containerRef} className="px-[22px] pb-7 pt-3.5">
       {lesson.sentences.map((s) => {
         const isCurrent = s.i === currentSentence;
+        const isPast = s.i < currentSentence;
         return (
           <SentenceRow
             key={s.i}
             sentence={s}
             isCurrent={isCurrent}
-            showNative={lesson.params.mode === 'bilingual'}
+            isPast={isPast}
+            showNative={showNative}
             onJump={() => onJump(s.i)}
-            attachRef={
-              isCurrent
-                ? (el) => {
-                    currentRef.current = el;
-                  }
-                : undefined
-            }
+            attachRef={isCurrent ? (el) => (currentRef.current = el) : undefined}
           />
         );
       })}
@@ -65,47 +73,42 @@ export function TranscriptView({
 function SentenceRow({
   sentence,
   isCurrent,
+  isPast,
   showNative,
   onJump,
   attachRef,
 }: {
   sentence: Sentence;
   isCurrent: boolean;
+  isPast: boolean;
   showNative: boolean;
   onJump: () => void;
   attachRef?: (el: HTMLLIElement | null) => void;
 }) {
-  if (isCurrent) {
-    return (
-      <li
-        ref={attachRef}
-        className="relative cursor-pointer rounded-r-md bg-aegean-50 px-4 py-3"
-        onClick={onJump}
-      >
-        <span aria-hidden className="absolute left-0 top-0 h-full w-1 rounded-l bg-aegean" />
-        <p className="font-serif text-2xl leading-snug text-ink">{sentence.gr}</p>
-        {showNative && (
-          <p className="mt-1 text-base text-ink-muted">{sentence.native}</p>
-        )}
-        {sentence.status === 'failed' && (
-          <p className="mt-1 text-xs text-terracotta">[skipped]</p>
-        )}
-      </li>
-    );
-  }
+  const targetTone = isCurrent ? 'text-ink' : isPast ? 'text-ink-soft' : 'text-ink-soft opacity-[0.72]';
   return (
     <li
       ref={attachRef}
       onClick={onJump}
-      className="cursor-pointer rounded-md px-4 py-1.5 transition-colors hover:bg-paper"
+      className={
+        'my-0.5 cursor-pointer rounded-[16px] px-4 py-4 transition ' +
+        (isCurrent ? 'bg-aegean-tint shadow-[inset_3px_0_0_var(--aegean)]' : '')
+      }
     >
-      <p className="font-serif text-base text-ink-muted">{sentence.gr}</p>
+      <p className={`font-serif text-[calc(25px*var(--fs-scale))] leading-[1.32] tracking-[-0.01em] ${targetTone}`}>
+        {sentence.gr}
+      </p>
       {showNative && (
-        <p className="text-xs text-ink-faint">{sentence.native}</p>
+        <p
+          className={
+            'mt-2 font-sans text-[calc(16px*var(--fs-scale))] leading-[1.4] ' +
+            (isCurrent ? 'text-[color-mix(in_srgb,var(--aegean)_70%,var(--ink-soft))]' : 'text-ink-mute')
+          }
+        >
+          {sentence.native}
+        </p>
       )}
-      {sentence.status === 'failed' && (
-        <p className="text-xs text-terracotta">[skipped]</p>
-      )}
+      {sentence.status === 'failed' && <p className="mt-1 text-xs text-accent">[skipped]</p>}
     </li>
   );
 }

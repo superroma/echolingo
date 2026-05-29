@@ -3,6 +3,40 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PlaylistEntry } from '@echolingo/shared/types';
 
+const SPEED_KEY = 'echo:speed';
+export const posKey = (id: string) => `echo:pos:${id}`;
+
+export function loadSpeed(): number {
+  try {
+    const v = Number(localStorage.getItem(SPEED_KEY));
+    return v === 0.75 || v === 1 || v === 1.25 ? v : 1;
+  } catch {
+    return 1;
+  }
+}
+export function saveSpeed(rate: number): void {
+  try {
+    localStorage.setItem(SPEED_KEY, String(rate));
+  } catch {
+    /* ignore */
+  }
+}
+export function loadPosition(id: string): number {
+  try {
+    const v = Number(localStorage.getItem(posKey(id)));
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  } catch {
+    return 0;
+  }
+}
+export function savePosition(id: string, sec: number): void {
+  try {
+    localStorage.setItem(posKey(id), String(sec));
+  } catch {
+    /* ignore */
+  }
+}
+
 export interface PlayerState {
   isPlaying: boolean;
   currentChunk: number;
@@ -21,7 +55,7 @@ export interface PlayerControls {
   setSpeed(rate: number): void;
 }
 
-export function usePlayer(playlist: PlaylistEntry[]): {
+export function usePlayer(playlist: PlaylistEntry[], echoId?: string): {
   audioRef: React.RefObject<HTMLAudioElement | null>;
   state: PlayerState;
   controls: PlayerControls;
@@ -29,7 +63,7 @@ export function usePlayer(playlist: PlaylistEntry[]): {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentChunk, setCurrentChunk] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [speed, setSpeedState] = useState(1);
+  const [speed, setSpeedState] = useState(() => (typeof window !== 'undefined' ? loadSpeed() : 1));
 
   const currentSentence = useMemo(
     () => playlist[currentChunk]?.sentenceIndex ?? 0,
@@ -142,7 +176,19 @@ export function usePlayer(playlist: PlaylistEntry[]): {
 
   const setSpeed = useCallback((rate: number) => {
     setSpeedState(rate);
+    saveSpeed(rate);
   }, []);
+
+  // Persist playback position so reopening an echo resumes where it left off.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !echoId) return;
+    const onTime = () => {
+      if (audio.currentTime > 0) savePosition(echoId, audio.currentTime);
+    };
+    audio.addEventListener('timeupdate', onTime);
+    return () => audio.removeEventListener('timeupdate', onTime);
+  }, [echoId]);
 
   // MediaSession integration (lockscreen / Now-Playing controls)
   useEffect(() => {

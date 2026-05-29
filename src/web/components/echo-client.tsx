@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Lesson, LessonParams } from '@echolingo/shared/types';
+import { cefr, LANG_NAME, type Lesson, type LessonParams } from '@echolingo/shared/types';
 import { useEcho } from '../hooks/use-echo';
-import { usePlayer } from '../hooks/use-player';
+import { usePlayer, loadPosition } from '../hooks/use-player';
 import { useEchoes } from '../hooks/use-echoes';
 import { AppBar } from './app-bar';
 import { EchoProgress } from './echo-progress';
 import { PlayerControlsView } from './player-controls';
 import { TranscriptView } from './transcript-view';
+import { isSharedVisit, ShareContextStrip, ConversionCard } from './share-affordances';
 import { buildPlaylist } from '@echolingo/shared/playlist';
 import {
   cumulativeDurations,
@@ -85,12 +86,7 @@ function NewEcho({ params }: { params: LessonParams }) {
 
   return (
     <PageFrame title={params.topic}>
-      {state.kind === 'creating' && (
-        <CenteredCard>
-          <p className="text-sm text-ink-muted">starting your echo…</p>
-          <Spinner />
-        </CenteredCard>
-      )}
+      {state.kind === 'creating' && <Generating topic={params.topic} meta={metaLine(params)} />}
       {state.kind === 'rate_limited' && (
         <ErrorCard
           title="Daily limit reached"
@@ -110,9 +106,22 @@ function NewEcho({ params }: { params: LessonParams }) {
 
 function ExistingEcho({ id }: { id: string }) {
   const router = useRouter();
-  const { addEcho, updateEcho, removeEcho } = useEchoes();
+  const { echoes, hydrated, addEcho, updateEcho, removeEcho } = useEchoes();
   const state = useEcho(id);
   const [retrying, setRetrying] = useState<CreateState | null>(null);
+  const [showTranslation, setShowTranslation] = useState(true);
+
+  // Capture, the first time the library is hydrated, whether this id was
+  // already owned — before the silent-adoption effect appends it. A friend
+  // opening a fresh link sees the conversion affordances; the owner does not.
+  const libraryHadIdRef = useRef<boolean | null>(null);
+  if (libraryHadIdRef.current === null && hydrated) {
+    libraryHadIdRef.current = echoes.some((e) => e.id === id);
+  }
+  const shared =
+    libraryHadIdRef.current === null
+      ? false
+      : isSharedVisit({ libraryHadId: libraryHadIdRef.current });
 
   const adoptedRef = useRef(false);
   useEffect(() => {
@@ -146,7 +155,8 @@ function ExistingEcho({ id }: { id: string }) {
         : [],
     [state],
   );
-  const player = usePlayer(playlist);
+  const player = usePlayer(playlist, id);
+  const bilingual = state.kind === 'ok' && state.echo.params.mode === 'bilingual';
 
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   useEffect(() => {
@@ -175,6 +185,15 @@ function ExistingEcho({ id }: { id: string }) {
       if (audio) audio.currentTime = offsetInChunk;
     });
   }
+
+  // Resume where the listener left off, once the playlist is ready.
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current || playlist.length === 0) return;
+    restoredRef.current = true;
+    const saved = loadPosition(id);
+    if (saved > 0) onSeek(saved);
+  }, [playlist.length, id]);
 
   async function retryFailed(echo: Lesson) {
     setRetrying({ kind: 'creating' });
@@ -285,49 +304,70 @@ function ExistingEcho({ id }: { id: string }) {
 
   const ready = echo.status === 'ready';
 
+  if (!ready) {
+    return (
+      <PageFrame title={echo.params.topic}>
+        <EchoProgress echo={echo} />
+      </PageFrame>
+    );
+  }
+
   return (
-    <PageFrame title={echo.params.topic} pad>
-      {!ready && <EchoProgress echo={echo} />}
-      {ready && (
-        <>
-          <audio ref={player.audioRef as RefObject<HTMLAudioElement>} preload="auto" />
-          <TranscriptView
-            lesson={echo}
-            currentSentence={player.state.currentSentence}
-            onJump={player.controls.jumpToSentence}
+    <div className="flex h-[100dvh] flex-col">
+      <AppBar title={echo.params.topic} showNew />
+      <audio ref={player.audioRef as RefObject<HTMLAudioElement>} preload="auto" />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {shared && <ShareContextStrip echo={echo} />}
+        <TranscriptView
+          lesson={echo}
+          currentSentence={player.state.currentSentence}
+          showNative={bilingual && showTranslation}
+          onJump={player.controls.jumpToSentence}
+        />
+        {shared && <ConversionCard />}
+      </div>
+      <div className="flex-none border-t border-line bg-paper/[0.92] px-[22px] pb-[max(30px,env(safe-area-inset-bottom))] pt-3 shadow-[var(--shadow-up)] backdrop-blur-[14px]">
+        <div className="mx-auto max-w-2xl">
+          <PlayerControlsView
+            state={player.state}
+            controls={player.controls}
+            elapsedSec={elapsedSec}
+            totalSec={total}
+            onSeek={onSeek}
+            bilingual={bilingual}
+            showTranslation={showTranslation}
+            onToggleTranslation={() => setShowTranslation((v) => !v)}
           />
-        </>
-      )}
-      {ready && (
-        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-hairline bg-paper/95 px-4 py-4 backdrop-blur">
-          <div className="mx-auto max-w-2xl">
-            <PlayerControlsView
-              state={player.state}
-              controls={player.controls}
-              elapsedSec={elapsedSec}
-              totalSec={total}
-              onSeek={onSeek}
-            />
-          </div>
         </div>
-      )}
-    </PageFrame>
+      </div>
+    </div>
   );
 }
 
-function PageFrame({
-  title,
-  pad,
-  children,
-}: {
-  title: string;
-  pad?: boolean;
-  children: React.ReactNode;
-}) {
+function PageFrame({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className={`min-h-screen ${pad ? 'pb-40' : ''}`}>
-      <AppBar title={title} />
+    <div className="min-h-screen">
+      <AppBar title={title} showNew />
       <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
+    </div>
+  );
+}
+
+function metaLine(params: LessonParams): string {
+  return `${LANG_NAME[params.targetLang].toLowerCase()} · ${params.lengthMin} min · ${cefr(params.level)}`;
+}
+
+function Generating({ topic, meta }: { topic: string; meta: string }) {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-[22px] p-10 text-center">
+      <div className="h-[54px] w-[54px] animate-spin rounded-full border-[3px] border-line border-t-accent" />
+      <div>
+        <div className="font-serif text-[18px] italic text-ink-soft">composing your echo…</div>
+        <div className="mx-auto mt-2.5 max-w-[26ch] font-serif text-[22px] font-semibold tracking-[-0.01em] text-ink">
+          {topic}
+        </div>
+        <div className="mt-2.5 font-serif text-[14px] italic text-ink-soft">{meta}</div>
+      </div>
     </div>
   );
 }
