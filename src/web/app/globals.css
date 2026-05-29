@@ -2,6 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
+:root,
+.theme-light {
+  --paper: #f6f6f7;
+  --paper-2: #ffffff;
+  --paper-3: #ffffff;
+  --ink: #121214;
+  --ink-soft: #52525b;
+  --ink-mute: #9a9aa3;
+  --line: #e6e6ea;
+  --line-soft: #efeff2;
+  --accent: #f97316;
+  --accent-ink: #ffffff;
+  --aegean: var(--accent);
+  --aegean-tint: #feeee3; /* mix(accent 12%, #fff) */
+  --radius: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --fs-scale: 1;
+  --shadow-1: 0 1px 2px rgba(20, 20, 25, 0.04), 0 2px 8px rgba(20, 20, 25, 0.05);
+  --shadow-2: 0 4px 14px rgba(20, 20, 25, 0.08), 0 1px 3px rgba(20, 20, 25, 0.05);
+  --shadow-up: 0 -8px 24px rgba(20, 20, 25, 0.07);
+}
+
+.theme-dark {
+  --paper: #0f0f11;
+  --paper-2: #17171a;
+  --paper-3: #202024;
+  --ink: #f3f3f5;
+  --ink-soft: #a6a6ae;
+  --ink-mute: #6c6c75;
+  --line: #2a2a30;
+  --line-soft: #202024;
+  --aegean-tint: #4d2d19; /* mix(accent 24%, #17171a) */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-up: 0 -8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Unset users follow the OS, unless an explicit override class is set. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.theme-light):not(.theme-dark) {
+    --paper: #0f0f11;
+    --paper-2: #17171a;
+    --paper-3: #202024;
+    --ink: #f3f3f5;
+    --ink-soft: #a6a6ae;
+    --ink-mute: #6c6c75;
+    --line: #2a2a30;
+    --line-soft: #202024;
+    --aegean-tint: #4d2d19;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-up: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  }
+}
+
 @layer base {
   body {
     font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
@@ -9,6 +65,6 @@
 
   input::placeholder,
   textarea::placeholder {
-    @apply text-ink-faint;
+    @apply text-ink-mute;
   }
 }
