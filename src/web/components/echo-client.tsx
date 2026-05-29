@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { cefr, LANG_NAME, type Lesson, type LessonParams } from '@echolingo/shared/types';
 import { useEcho } from '../hooks/use-echo';
 import { usePlayer, loadPosition } from '../hooks/use-player';
-import { useEchoes } from '../hooks/use-echoes';
+import { useEchoes, loadEchoes } from '../hooks/use-echoes';
 import { AppBar } from './app-bar';
 import { EchoProgress } from './echo-progress';
 import { PlayerControlsView } from './player-controls';
@@ -25,6 +25,18 @@ type ExistingProps = { kind: 'existing'; id: string };
 export function EchoClient(props: NewProps | ExistingProps) {
   if (props.kind === 'new') return <NewEcho params={props.params} />;
   return <ExistingEcho id={props.id} />;
+}
+
+// Per-session, per-id memo of the shared-vs-owner decision. Lives in module
+// scope so it persists across a StrictMode remount; cleared on real page reload.
+const sharedById = new Map<string, boolean>();
+function resolveShared(id: string): boolean {
+  if (typeof window === 'undefined') return false;
+  if (!sharedById.has(id)) {
+    const owned = loadEchoes(window.localStorage).some((e) => e.id === id);
+    sharedById.set(id, isSharedVisit({ libraryHadId: owned }));
+  }
+  return sharedById.get(id) === true;
 }
 
 type CreateState =
@@ -106,22 +118,16 @@ function NewEcho({ params }: { params: LessonParams }) {
 
 function ExistingEcho({ id }: { id: string }) {
   const router = useRouter();
-  const { echoes, hydrated, addEcho, updateEcho, removeEcho } = useEchoes();
+  const { addEcho, updateEcho, removeEcho } = useEchoes();
   const state = useEcho(id);
   const [retrying, setRetrying] = useState<CreateState | null>(null);
   const [showTranslation, setShowTranslation] = useState(true);
 
-  // Capture, the first time the library is hydrated, whether this id was
-  // already owned — before the silent-adoption effect appends it. A friend
-  // opening a fresh link sees the conversion affordances; the owner does not.
-  const libraryHadIdRef = useRef<boolean | null>(null);
-  if (libraryHadIdRef.current === null && hydrated) {
-    libraryHadIdRef.current = echoes.some((e) => e.id === id);
-  }
-  const shared =
-    libraryHadIdRef.current === null
-      ? false
-      : isSharedVisit({ libraryHadId: libraryHadIdRef.current });
+  // Owner-vs-visitor: decided once per id from the persisted library, the first
+  // time this id is opened this session — before silent adoption appends it.
+  // Recorded in module scope so it survives a StrictMode unmount/remount (whose
+  // fresh refs would otherwise re-read the just-adopted id and misread "owner").
+  const shared = resolveShared(id);
 
   const adoptedRef = useRef(false);
   useEffect(() => {
