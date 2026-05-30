@@ -34,24 +34,35 @@ npm install
 
 ## Run locally
 
-In three terminals:
+One command brings up the whole stack:
 
 ```bash
-# 1. Storage emulator
-npm run azurite
-
-# 2. Backend
-npm run dev:api          # starts Azure Functions on http://localhost:7071
-
-# 3. Frontend
-npm run dev:web          # starts Next.js on http://localhost:3000
+npm run dev
 ```
+
+This builds `@echolingo/shared` first (the web app imports it via its `dist/`
+`exports`, so it must exist before Next compiles), then runs four processes
+together under [`concurrently`](https://www.npmjs.com/package/concurrently) with
+colour-coded prefixes:
+
+- `azurite` — storage emulator (blob/queue/table on `10000`–`10002`)
+- `shared` — `tsc --watch` so edits to shared types recompile live
+- `api`    — Azure Functions on http://localhost:7071
+- `web`    — Next.js on http://localhost:3000
+
+No keys required: with no `OPENAI_API_KEY`/`AZURE_OPENAI_ENDPOINT` set, the API
+runs the **mock** LLM + TTS engines (see [Real provider configuration](#real-provider-configuration-plan-4)).
+`Ctrl+C` stops all four (`--kill-others`).
 
 Smoke-test the API:
 
 ```bash
 curl http://localhost:7071/api/health
 ```
+
+> Need them in separate terminals? The underlying scripts are still available
+> individually: `npm run azurite`, `npm run dev:shared`, `npm run dev:api`,
+> `npm run dev:web`.
 
 ## Test
 
