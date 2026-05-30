@@ -75,7 +75,7 @@ export function CreateEchoForm({ showSuggestions = false }: { showSuggestions?: 
         onChange={(e) => update('topic', e.target.value)}
         onInput={autosize}
         placeholder="at the bakery, ordering coffee, asking the barista what they recommend…"
-        className="block w-full resize-none overflow-hidden border-0 bg-transparent p-0 font-serif text-[calc(30px*var(--fs-scale))] leading-[1.22] tracking-[-0.015em] text-ink outline-none placeholder:text-ink-mute"
+        className="block w-full resize-none overflow-hidden border-0 bg-transparent p-0 font-serif text-[calc(30px*var(--fs-scale))] leading-[1.22] tracking-[-0.015em] text-ink placeholder:text-ink-mute"
       />
 
       {showSuggestions && (
@@ -85,7 +85,7 @@ export function CreateEchoForm({ showSuggestions = false }: { showSuggestions?: 
               key={s}
               type="button"
               onClick={() => update('topic', s)}
-              className="rounded-pill border border-line bg-paper-2 px-3.5 py-[9px] font-serif text-[15px] italic text-ink-soft"
+              className="inline-flex min-h-[44px] items-center rounded-pill border border-line bg-paper-2 px-3.5 py-[9px] font-serif text-[15px] italic text-ink-soft"
             >
               {s}
             </button>
@@ -138,7 +138,8 @@ export function CreateEchoForm({ showSuggestions = false }: { showSuggestions?: 
             value={prefs.level}
             onChange={(e) => update('level', Number(e.target.value) as LessonLevel)}
             aria-label="level"
-            className="h-1.5 w-full cursor-pointer appearance-none rounded-full outline-none"
+            aria-valuetext={cefr(prefs.level)}
+            className="range-accent h-1.5 w-full cursor-pointer appearance-none rounded-full"
             style={{ background: `linear-gradient(to right, var(--accent) ${fillPct}%, var(--line) ${fillPct}%)` }}
           />
           <div className="mt-2.5 flex justify-between text-[12px] font-semibold tracking-[0.03em] text-ink-mute">
@@ -155,7 +156,7 @@ export function CreateEchoForm({ showSuggestions = false }: { showSuggestions?: 
         <button
           type="submit"
           disabled={!prefs.topic.trim()}
-          className="inline-flex h-[54px] items-center justify-center gap-2.5 rounded-pill bg-accent px-[30px] font-serif text-[19px] font-semibold text-accent-ink shadow-[0_6px_16px_color-mix(in_srgb,var(--accent)_34%,transparent)] transition disabled:opacity-40 disabled:shadow-none"
+          className="inline-flex h-[54px] items-center justify-center gap-2.5 rounded-pill bg-accent px-[30px] font-serif text-[19px] font-semibold text-accent-ink shadow-[0_6px_16px_color-mix(in_srgb,var(--accent)_34%,transparent)] transition hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:border disabled:border-line disabled:bg-paper-3 disabled:text-ink-mute disabled:shadow-none disabled:brightness-100 disabled:active:scale-100"
         >
           go <ArrowRightIcon size={18} />
         </button>

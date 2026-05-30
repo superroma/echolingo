@@ -46,7 +46,8 @@ export function TranscriptView({
     const elRect = el.getBoundingClientRect();
     const boxRect = box.getBoundingClientRect();
     const delta = elRect.top - boxRect.top - box.clientHeight * 0.3;
-    box.scrollBy({ top: delta, behavior: 'smooth' });
+    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    box.scrollBy({ top: delta, behavior: smooth ? 'smooth' : 'auto' });
   }, [currentSentence]);
 
   return (
@@ -85,14 +86,16 @@ function SentenceRow({
   onJump: () => void;
   attachRef?: (el: HTMLLIElement | null) => void;
 }) {
-  const targetTone = isCurrent ? 'text-ink' : isPast ? 'text-ink-soft' : 'text-ink-soft opacity-[0.72]';
+  const targetTone = isCurrent ? 'text-ink' : isPast ? 'text-ink-soft' : 'text-ink-mute';
   return (
     <li
       ref={attachRef}
       onClick={onJump}
       className={
         'my-0.5 cursor-pointer rounded-[16px] px-4 py-4 transition ' +
-        (isCurrent ? 'bg-aegean-tint shadow-[inset_3px_0_0_var(--aegean)]' : '')
+        (isCurrent
+          ? 'bg-[color-mix(in_srgb,var(--accent)_12%,var(--paper-2))] shadow-[inset_3px_0_0_var(--accent)]'
+          : '')
       }
     >
       <p className={`font-serif text-[calc(25px*var(--fs-scale))] leading-[1.32] tracking-[-0.01em] ${targetTone}`}>
@@ -102,7 +105,7 @@ function SentenceRow({
         <p
           className={
             'mt-2 font-sans text-[calc(16px*var(--fs-scale))] leading-[1.4] ' +
-            (isCurrent ? 'text-[color-mix(in_srgb,var(--aegean)_70%,var(--ink-soft))]' : 'text-ink-mute')
+            (isCurrent ? 'text-ink-soft' : 'text-ink-mute')
           }
         >
           {sentence.native}

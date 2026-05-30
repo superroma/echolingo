@@ -16,7 +16,7 @@ export function EchoesList({
 }) {
   if (!hydrated || echoes.length === 0) return null;
   return (
-    <section className="mt-[26px]">
+    <section className="mt-[26px] lg:mt-0">
       <h2 className="text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-mute">your echoes</h2>
       <ul className="mt-1 pb-7">
         {echoes.map((echo) => (
@@ -66,7 +66,11 @@ function EchoRow({ echo, onRemove }: { echo: Echo; onRemove: (id: string) => voi
           </span>
         </span>
       </button>
-      {isNew && <span className="h-[9px] w-[9px] flex-shrink-0 rounded-full bg-accent" />}
+      {isNew && (
+        <span className="flex-shrink-0 rounded-pill bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-accent-ink">
+          new
+        </span>
+      )}
       <button
         type="button"
         onClick={() => {

@@ -30,6 +30,20 @@ export function Scrubber({
     [onSeek, safeTotal],
   );
 
+  const onKey = useCallback(
+    (e: React.KeyboardEvent) => {
+      let next: number | null = null;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = elapsedSec + 5;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = elapsedSec - 5;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = safeTotal;
+      if (next === null) return;
+      e.preventDefault();
+      onSeek(Math.min(safeTotal, Math.max(0, next)));
+    },
+    [elapsedSec, safeTotal, onSeek],
+  );
+
   return (
     <div className="mb-[11px] flex items-center gap-3">
       <div
@@ -38,9 +52,11 @@ export function Scrubber({
         aria-valuemin={0}
         aria-valuemax={Math.round(safeTotal)}
         aria-valuenow={Math.round(elapsedSec)}
+        aria-valuetext={`${formatTime(elapsedSec)} of ${formatTime(totalSec)}`}
         tabIndex={0}
         onClick={(e) => seekFromEvent(e.clientX, e.currentTarget)}
-        className="relative flex h-4 flex-1 cursor-pointer items-center"
+        onKeyDown={onKey}
+        className="relative flex h-7 flex-1 cursor-pointer items-center"
       >
         <div className="absolute left-0 right-0 h-[5px] overflow-hidden rounded-full bg-line">
           <div className="absolute inset-y-0 left-0 rounded-full bg-accent" style={{ width: `${pct}%` }} />

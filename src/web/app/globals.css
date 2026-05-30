@@ -9,11 +9,11 @@
   --paper-3: #ffffff;
   --ink: #121214;
   --ink-soft: #52525b;
-  --ink-mute: #9a9aa3;
+  --ink-mute: #6f6f78;
   --line: #e6e6ea;
   --line-soft: #efeff2;
   --accent: #f97316;
-  --accent-ink: #ffffff;
+  --accent-ink: #121214;
   --aegean: var(--accent);
   --aegean-tint: #feeee3; /* mix(accent 12%, #fff) */
   --radius: 16px;
@@ -31,7 +31,7 @@
   --paper-3: #202024;
   --ink: #f3f3f5;
   --ink-soft: #a6a6ae;
-  --ink-mute: #6c6c75;
+  --ink-mute: #9a9aa3;
   --line: #2a2a30;
   --line-soft: #202024;
   --aegean-tint: #4d2d19; /* mix(accent 24%, #17171a) */
@@ -48,7 +48,7 @@
     --paper-3: #202024;
     --ink: #f3f3f5;
     --ink-soft: #a6a6ae;
-    --ink-mute: #6c6c75;
+    --ink-mute: #9a9aa3;
     --line: #2a2a30;
     --line-soft: #202024;
     --aegean-tint: #4d2d19;
@@ -66,5 +66,59 @@
   input::placeholder,
   textarea::placeholder {
     @apply text-ink-mute;
+  }
+
+  /* Visible keyboard focus on every interactive element (modern browsers
+     follow the element's border-radius for the outline automatically). */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+/* Fluid type — nudge the serif scale up on larger viewports. Drives every
+   font-size that reads calc(... * var(--fs-scale)) (topic field, transcript). */
+@media (min-width: 768px) {
+  :root {
+    --fs-scale: 1.04;
+  }
+}
+@media (min-width: 1280px) {
+  :root {
+    --fs-scale: 1.12;
+  }
+}
+
+/* Accent range slider (level selector) — unify the thumb with the orange track. */
+input[type='range'].range-accent::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 9999px;
+  background: var(--accent);
+  border: 3px solid var(--paper-2);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+}
+input[type='range'].range-accent::-moz-range-thumb {
+  height: 18px;
+  width: 18px;
+  border-radius: 9999px;
+  background: var(--accent);
+  border: 3px solid var(--paper-2);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+}
+
+/* Honour reduced-motion: drop press-scales, transitions, and smooth auto-scroll. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

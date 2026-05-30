@@ -31,13 +31,13 @@ export function AppBar({ title, showNew = false }: AppBarProps) {
           type="button"
           onClick={toggle}
           aria-label={effective === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft hover:bg-paper-3"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-ink-soft hover:bg-paper-3"
         >
           {effective === 'dark' ? <SunIcon size={20} /> : <MoonIcon size={20} />}
         </button>
         {showNew && (
           <Link
-            href="/echo/new"
+            href="/"
             className="inline-flex h-10 items-center gap-1.5 rounded-pill bg-accent px-[18px] text-[15px] font-semibold text-accent-ink shadow-[var(--shadow-1)]"
           >
             <span className="text-[18px] leading-none">+</span> new

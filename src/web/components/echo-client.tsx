@@ -323,14 +323,16 @@ function ExistingEcho({ id }: { id: string }) {
       <AppBar title={echo.params.topic} showNew />
       <audio ref={player.audioRef as RefObject<HTMLAudioElement>} preload="auto" />
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {shared && <ShareContextStrip echo={echo} />}
-        <TranscriptView
-          lesson={echo}
-          currentSentence={player.state.currentSentence}
-          showNative={bilingual && showTranslation}
-          onJump={player.controls.jumpToSentence}
-        />
-        {shared && <ConversionCard />}
+        <div className="mx-auto w-full max-w-2xl">
+          {shared && <ShareContextStrip echo={echo} />}
+          <TranscriptView
+            lesson={echo}
+            currentSentence={player.state.currentSentence}
+            showNative={bilingual && showTranslation}
+            onJump={player.controls.jumpToSentence}
+          />
+          {shared && <ConversionCard />}
+        </div>
       </div>
       <div className="flex-none border-t border-line bg-paper/[0.92] px-[22px] pb-[max(30px,env(safe-area-inset-bottom))] pt-3 shadow-[var(--shadow-up)] backdrop-blur-[14px]">
         <div className="mx-auto max-w-2xl">

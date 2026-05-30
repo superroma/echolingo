@@ -43,10 +43,15 @@ export function HomeClient() {
     <>
       <AppBar />
       <InstallPanel />
-      <main className="mx-auto max-w-md px-6 pb-7 pt-[18px]">
+      <main
+        className={
+          'mx-auto w-full px-6 pb-10 pt-[18px] md:flex md:min-h-[calc(100dvh-56px)] md:flex-col md:justify-center md:pt-0 ' +
+          (firstRun ? 'max-w-xl' : 'max-w-xl lg:max-w-5xl')
+        }
+      >
         {firstRun && (
           <div className="px-2 pb-[18px] pt-1.5 text-center">
-            <h1 className="mb-2.5 font-serif text-[34px] font-semibold leading-[1.04] tracking-[-0.025em] text-ink">
+            <h1 className="mb-2.5 font-serif text-[clamp(30px,5.5vw,42px)] font-semibold leading-[1.04] tracking-[-0.025em] text-ink">
               listening lessons,
               <br />
               on demand
@@ -58,8 +63,10 @@ export function HomeClient() {
             </p>
           </div>
         )}
-        <CreateEchoForm showSuggestions={firstRun} />
-        <EchoesList echoes={echoes} hydrated={hydrated} onRemove={removeEcho} />
+        <div className={firstRun ? undefined : 'lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-14'}>
+          <CreateEchoForm showSuggestions={firstRun} />
+          <EchoesList echoes={echoes} hydrated={hydrated} onRemove={removeEcho} />
+        </div>
       </main>
     </>
   );

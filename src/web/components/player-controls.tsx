@@ -63,7 +63,7 @@ export function PlayerControlsView({
             type="button"
             onClick={() => controls.setSpeed(s)}
             className={
-              'rounded-pill px-4 py-[7px] text-[13px] font-semibold transition ' +
+              'inline-flex min-h-[40px] items-center justify-center rounded-pill px-4 py-2 text-[13px] font-semibold transition ' +
               (Math.abs(state.speed - s) < 0.01
                 ? 'border border-ink bg-ink text-paper-2'
                 : 'border border-line bg-paper-3 text-ink-soft')
@@ -81,7 +81,7 @@ export function PlayerControlsView({
               aria-pressed={showTranslation}
               title={showTranslation ? 'hide translation' : 'show translation'}
               className={
-                'rounded-pill px-4 py-[7px] text-[13px] font-semibold transition ' +
+                'inline-flex min-h-[40px] items-center justify-center rounded-pill px-4 py-2 text-[13px] font-semibold transition ' +
                 (showTranslation
                   ? 'border border-accent bg-accent text-accent-ink'
                   : 'border border-line bg-paper-3 text-ink-soft')
