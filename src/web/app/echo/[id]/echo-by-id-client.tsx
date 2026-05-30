@@ -15,5 +15,5 @@ export function EchoByIdClient() {
     setId(readIdFromPath());
   }, []);
   if (!id) return null;
-  return <EchoClient kind="existing" id={id} />;
+  return <EchoClient id={id} />;
 }

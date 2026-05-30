@@ -26,15 +26,6 @@ describe('staticwebapp.config.json', () => {
     routes: Array<{ route: string; rewrite: string }>;
   };
 
-  it('/echo/new resolves to the new-echo static, not the [id] shell', () => {
-    // This is the bug we hit in production: with only /echo/* in the routes
-    // list, the user's create-flow navigation to /echo/new got rewritten to
-    // /echo/shell/index.html, which rendered EchoByIdClient treating "new"
-    // as a lesson id and showing "not found".
-    const m = matchRoute(cfg.routes, '/echo/new');
-    expect(m?.rewrite).toBe('/echo/new/index.html');
-  });
-
   it('runtime-generated /echo/{id} resolves to the [id] shell', () => {
     const m = matchRoute(cfg.routes, '/echo/d1bfa9965a574152817c2952e13eedec');
     expect(m?.rewrite).toBe('/echo/shell/index.html');

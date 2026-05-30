@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
-import { cefr, LANG_NAME, type Lesson, type LessonParams } from '@echolingo/shared/types';
+import { cefr, isLessonParams, LANG_NAME, type Lesson, type LessonParams } from '@echolingo/shared/types';
 import { useEcho } from '../hooks/use-echo';
 import { usePlayer, loadPosition } from '../hooks/use-player';
 import { useEchoes, loadEchoes } from '../hooks/use-echoes';
@@ -19,12 +19,8 @@ import {
 } from '../hooks/playlist-math';
 import { createLesson, type CreateLessonResult } from '../lib/api';
 
-type NewProps = { kind: 'new'; params: LessonParams };
-type ExistingProps = { kind: 'existing'; id: string };
-
-export function EchoClient(props: NewProps | ExistingProps) {
-  if (props.kind === 'new') return <NewEcho params={props.params} />;
-  return <ExistingEcho id={props.id} />;
+export function EchoClient({ id }: { id: string }) {
+  return <ExistingEcho id={id} />;
 }
 
 // Per-session, per-id memo of the shared-vs-owner decision. Lives in module
@@ -44,90 +40,94 @@ type CreateState =
   | { kind: 'rate_limited'; limit: number; used: number; resetAt: string }
   | { kind: 'network_error'; message: string };
 
-function NewEcho({ params }: { params: LessonParams }) {
-  const router = useRouter();
-  const { addEcho } = useEchoes();
-  const [state, setState] = useState<CreateState>({ kind: 'creating' });
-  const [attempt, setAttempt] = useState(0);
-  const postedAttemptRef = useRef(-1);
+const CREATE_PREFIX = 'echo:create:';
 
-  useEffect(() => {
-    if (postedAttemptRef.current === attempt) return;
-    postedAttemptRef.current = attempt;
-    const myAttempt = attempt;
-    setState({ kind: 'creating' });
-
-    void (async () => {
-      let result: CreateLessonResult;
-      try {
-        result = await createLesson(params);
-      } catch (e) {
-        if (postedAttemptRef.current !== myAttempt) return;
-        setState({ kind: 'network_error', message: (e as Error).message });
-        return;
-      }
-      if (postedAttemptRef.current !== myAttempt) return;
-      if (result.kind === 'created' || result.kind === 'existing') {
-        addEcho({
-          id: result.id,
-          topic: params.topic,
-          targetLang: params.targetLang,
-          nativeLang: params.nativeLang,
-          lengthMin: params.lengthMin,
-          level: params.level,
-          createdAt: new Date().toISOString(),
-          lastStatus: 'generating_script',
-        });
-        router.replace(`/echo/${result.id}/`);
-        return;
-      }
-      if (result.kind === 'rate_limited') {
-        setState({
-          kind: 'rate_limited',
-          limit: result.limit,
-          used: result.used,
-          resetAt: result.resetAt,
-        });
-        return;
-      }
-      setState({ kind: 'network_error', message: result.message });
-    })();
-  }, [params, addEcho, router, attempt]);
-
-  const retry = () => setAttempt((a) => a + 1);
-
-  return (
-    <PageFrame title={params.topic}>
-      {state.kind === 'creating' && <Generating topic={params.topic} meta={metaLine(params)} />}
-      {state.kind === 'rate_limited' && (
-        <ErrorCard
-          title="Daily limit reached"
-          message={`Used ${state.used} of ${state.limit}. Resets at ${state.resetAt}.`}
-        />
-      )}
-      {state.kind === 'network_error' && (
-        <ErrorCard
-          title="Couldn't reach the server"
-          message={state.message}
-          action={{ label: 'Retry', onClick: retry }}
-        />
-      )}
-    </PageFrame>
-  );
+/** Params the home form stashed for an id it linked to but hasn't created yet. */
+function readPendingParams(id: string): LessonParams | null {
+  try {
+    const raw = sessionStorage.getItem(CREATE_PREFIX + id);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    return isLessonParams(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+function clearPendingParams(id: string) {
+  try {
+    sessionStorage.removeItem(CREATE_PREFIX + id);
+  } catch {
+    // ignore storage failures
+  }
 }
 
 function ExistingEcho({ id }: { id: string }) {
   const router = useRouter();
   const { addEcho, updateEcho, removeEcho } = useEchoes();
-  const state = useEcho(id);
+  const [reloadToken, setReloadToken] = useState(0);
+  const state = useEcho(id, reloadToken);
   const [retrying, setRetrying] = useState<CreateState | null>(null);
   const [showTranslation, setShowTranslation] = useState(true);
+
+  // Create-on-arrival: the home form links to /echo/{id} (id is deterministic)
+  // and stashes the params in sessionStorage. If the lesson doesn't exist yet,
+  // POST it once, then bump the poll token so useEcho picks it up. Shared links
+  // carry no stashed params (the lesson already exists), so this is skipped.
+  const [pendingParams] = useState<LessonParams | null>(() =>
+    typeof window !== 'undefined' ? readPendingParams(id) : null,
+  );
+  const [creating, setCreating] = useState<CreateState | null>(
+    pendingParams ? { kind: 'creating' } : null,
+  );
+  const createTriedRef = useRef(false);
+
+  const runCreate = useCallback(
+    (params: LessonParams) => {
+      setCreating({ kind: 'creating' });
+      void (async () => {
+        let result: CreateLessonResult;
+        try {
+          result = await createLesson(params);
+        } catch (e) {
+          setCreating({ kind: 'network_error', message: (e as Error).message });
+          return;
+        }
+        if (result.kind === 'created' || result.kind === 'existing') {
+          clearPendingParams(id);
+          if (result.id !== id) {
+            // Self-correct if our computed id ever diverged from the server's.
+            router.replace(`/echo/${result.id}/`);
+            return;
+          }
+          setReloadToken((t) => t + 1); // re-poll; the lesson now exists
+        } else if (result.kind === 'rate_limited') {
+          setCreating({ kind: 'rate_limited', limit: result.limit, used: result.used, resetAt: result.resetAt });
+        } else {
+          setCreating({ kind: 'network_error', message: result.message });
+        }
+      })();
+    },
+    [id, router],
+  );
+
+  useEffect(() => {
+    if (!pendingParams || createTriedRef.current) return;
+    createTriedRef.current = true;
+    runCreate(pendingParams);
+  }, [pendingParams, runCreate]);
+
+  // Drop the transient create-cover once the (re)poll yields the lesson.
+  useEffect(() => {
+    if (state.kind === 'ok' && creating?.kind === 'creating') setCreating(null);
+  }, [state.kind, creating]);
 
   // Owner-vs-visitor: decided once per id from the persisted library, the first
   // time this id is opened this session — before silent adoption appends it.
   // Recorded in module scope so it survives a StrictMode unmount/remount (whose
   // fresh refs would otherwise re-read the just-adopted id and misread "owner").
-  const shared = resolveShared(id);
+  // If we arrived from the form (params stashed), we're the creator, not a
+  // visitor following a shared link — so never show the share/conversion UI.
+  const shared = pendingParams ? false : resolveShared(id);
 
   const adoptedRef = useRef(false);
   useEffect(() => {
@@ -238,6 +238,30 @@ function ExistingEcho({ id }: { id: string }) {
   }
 
   const headerTitle = state.kind === 'ok' ? state.echo.params.topic : 'echo';
+
+  if (creating) {
+    const title = pendingParams?.topic ?? 'new echo';
+    return (
+      <PageFrame title={title}>
+        {creating.kind === 'creating' && (
+          <Generating topic={title} meta={pendingParams ? metaLine(pendingParams) : ''} />
+        )}
+        {creating.kind === 'rate_limited' && (
+          <ErrorCard
+            title="Daily limit reached"
+            message={`Used ${creating.used} of ${creating.limit}. Resets at ${creating.resetAt}.`}
+          />
+        )}
+        {creating.kind === 'network_error' && (
+          <ErrorCard
+            title="Couldn't reach the server"
+            message={creating.message}
+            action={{ label: 'Retry', onClick: () => pendingParams && runCreate(pendingParams) }}
+          />
+        )}
+      </PageFrame>
+    );
+  }
 
   if (state.kind === 'loading') {
     return (

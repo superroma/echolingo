@@ -3,7 +3,15 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrefs, type FormPrefs } from '../hooks/use-prefs';
-import { LESSON_LENGTHS, cefr, type LangCode, type LessonLength, type LessonLevel } from '@echolingo/shared/types';
+import { lessonId } from '@echolingo/shared';
+import {
+  LESSON_LENGTHS,
+  cefr,
+  type LangCode,
+  type LessonLength,
+  type LessonLevel,
+  type LessonParams,
+} from '@echolingo/shared/types';
 import { LangSelect } from './select';
 import { ArrowRightIcon } from './icons';
 
@@ -49,18 +57,31 @@ export function CreateEchoForm({ showSuggestions = false }: { showSuggestions?: 
     });
   }
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     const topic = prefs.topic.trim();
     if (!topic) return;
-    const q = new URLSearchParams({
+    const params: LessonParams = {
       topic,
       targetLang: prefs.targetLang,
       nativeLang: prefs.nativeLang,
-      lengthMin: String(prefs.lengthMin),
-      level: String(prefs.level),
-    });
-    router.push(`/echo/new?${q.toString()}`);
+      lengthMin: prefs.lengthMin,
+      level: prefs.level,
+      mode: 'bilingual',
+      bilingualOrder: 'target_first',
+      ttsEngine: 'openai',
+    };
+    // The id is deterministic from the params (same hash the API uses), so we
+    // can link straight to /echo/{id}. Stash the params so that page can create
+    // the lesson if it doesn't exist yet; shared links omit them (the lesson
+    // already exists server-side by then).
+    const id = await lessonId(params);
+    try {
+      sessionStorage.setItem(`echo:create:${id}`, JSON.stringify(params));
+    } catch {
+      // ignore storage failures — /echo/{id} falls back to "not found"
+    }
+    router.push(`/echo/${id}/`);
   }
 
   const fillPct = ((prefs.level - 1) / (CEFR_TICKS.length - 1)) * 100;

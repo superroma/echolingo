@@ -46,7 +46,7 @@ export function decidePoll(result: GetLessonResult, prevErrors: number): PollDec
   return { state: { kind: 'ok', echo: result.lesson }, continuePolling: generating, consecutiveErrors: 0 };
 }
 
-export function useEcho(id: string): EchoState {
+export function useEcho(id: string, reloadToken = 0): EchoState {
   const [state, setState] = useState<EchoState>({ kind: 'loading' });
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export function useEcho(id: string): EchoState {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [id]);
+  }, [id, reloadToken]);
 
   return state;
 }
