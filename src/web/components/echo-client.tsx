@@ -243,7 +243,7 @@ function ExistingEcho({ id }: { id: string }) {
     return (
       <PageFrame title={headerTitle}>
         <CenteredCard>
-          <p className="text-sm text-ink-muted">Loading…</p>
+          <p className="text-sm text-ink-soft">Loading…</p>
         </CenteredCard>
       </PageFrame>
     );
@@ -277,7 +277,7 @@ function ExistingEcho({ id }: { id: string }) {
         <PageFrame title={headerTitle}>
           {retrying.kind === 'creating' && (
             <CenteredCard>
-              <p className="text-sm text-ink-muted">retrying…</p>
+              <p className="text-sm text-ink-soft">retrying…</p>
               <Spinner />
             </CenteredCard>
           )}
@@ -396,14 +396,14 @@ function ErrorCard({
   action?: { label: string; onClick: () => void };
 }) {
   return (
-    <div className="space-y-3 border-l-2 border-terracotta bg-paper px-4 py-3 text-sm text-ink-muted">
+    <div className="space-y-3 border-l-2 border-accent bg-paper px-4 py-3 text-sm text-ink-soft">
       <p className="font-medium text-ink">{title}</p>
       <p>{message}</p>
       {action && (
         <button
           type="button"
           onClick={action.onClick}
-          className="rounded-full bg-terracotta px-5 py-1.5 text-sm font-medium text-white"
+          className="rounded-full bg-accent px-5 py-1.5 text-sm font-medium text-accent-ink"
         >
           {action.label}
         </button>
@@ -415,7 +415,7 @@ function ErrorCard({
 function Spinner() {
   return (
     <span
-      className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-hairline border-t-aegean"
+      className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-line border-t-accent"
       aria-hidden
     />
   );
