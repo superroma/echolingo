@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { LANG_NAME, cefr } from '@echolingo/shared/types';
 import type { Echo } from '../hooks/use-echoes';
@@ -38,24 +39,141 @@ function progressOf(echo: Echo): number {
   }
 }
 
+// Swipe geometry: REVEAL is the resting width of the exposed Delete action;
+// dragging past COMMIT and releasing deletes outright (iOS-style full swipe).
+const REVEAL = 84;
+const COMMIT = 150;
+
 function EchoRow({ echo, onRemove }: { echo: Echo; onRemove: (id: string) => void }) {
   const router = useRouter();
   const p = progressOf(echo);
   const done = p >= 1;
   const partial = p > 0 && p < 1;
   const isNew = p === 0;
+
+  const [dx, setDx] = useState(0); // current foreground translateX (<= 0)
+  const [open, setOpen] = useState(false); // resting at the revealed Delete action
+  const [dragging, setDragging] = useState(false); // finger down → suppress transition
+  const [exiting, setExiting] = useState(false); // slide-out before removal
+
+  const startRef = useRef<{ x: number; y: number } | null>(null);
+  const swipedRef = useRef(false); // a horizontal drag happened → swallow the click
+  const axisRef = useRef<'none' | 'h' | 'v'>('none');
+
+  function remove() {
+    setExiting(true);
+    window.setTimeout(() => onRemove(echo.id), 200);
+  }
+
+  function navigate() {
+    if (swipedRef.current) return; // the click that trails a swipe — ignore it
+    if (open) {
+      setOpen(false);
+      setDx(0);
+      return;
+    }
+    router.push(`/${echo.id}/`);
+  }
+
+  function onPointerDown(e: ReactPointerEvent) {
+    if (e.pointerType !== 'touch') return; // desktop keeps the hover × button
+    startRef.current = { x: e.clientX, y: e.clientY };
+    swipedRef.current = false;
+    axisRef.current = 'none';
+    setDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onPointerMove(e: ReactPointerEvent) {
+    const start = startRef.current;
+    if (!start) return;
+    const mx = e.clientX - start.x;
+    const my = e.clientY - start.y;
+    if (axisRef.current === 'none') {
+      if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+      axisRef.current = Math.abs(mx) > Math.abs(my) ? 'h' : 'v';
+      if (axisRef.current === 'v') {
+        // vertical scroll — bow out and let the page handle it
+        startRef.current = null;
+        setDragging(false);
+        return;
+      }
+    }
+    swipedRef.current = true;
+    const base = open ? -REVEAL : 0;
+    const next = Math.max(-(COMMIT + 50), Math.min(0, base + mx));
+    setDx(next);
+  }
+
+  function endSwipe() {
+    if (axisRef.current !== 'h') {
+      startRef.current = null;
+      setDragging(false);
+      return;
+    }
+    startRef.current = null;
+    setDragging(false);
+    if (-dx >= COMMIT) {
+      remove();
+      return;
+    }
+    if (-dx >= REVEAL / 2) {
+      setOpen(true);
+      setDx(-REVEAL);
+    } else {
+      setOpen(false);
+      setDx(0);
+    }
+    // swipedRef stays true until the next pointerdown so the trailing click is
+    // swallowed; a fresh tap resets it in onPointerDown.
+  }
+
   return (
-    <li className="group flex items-center gap-3.5 border-b border-line-soft py-4 last:border-b-0">
-      <button
-        type="button"
-        onClick={() => router.push(`/${echo.id}/`)}
-        className="flex flex-1 items-center gap-3.5 text-left"
+    <li className="group relative overflow-hidden border-b border-line-soft last:border-b-0">
+      {/* Delete action, revealed as the foreground slides left (touch) */}
+      <div className="absolute inset-y-0 right-0 flex items-stretch">
+        <button
+          type="button"
+          onClick={remove}
+          style={{ width: REVEAL }}
+          tabIndex={open ? 0 : -1}
+          aria-hidden={!open}
+          aria-label="Delete echo"
+          className="flex items-center justify-center bg-[#e5484d] text-[13px] font-semibold text-white"
+        >
+          Delete
+        </button>
+      </div>
+
+      {/* Foreground row — translates on swipe, opaque so it masks the action */}
+      <div
+        className="relative flex items-center gap-3.5 bg-paper py-4"
+        style={{
+          transform: exiting ? 'translateX(-100%)' : `translateX(${dx}px)`,
+          opacity: exiting ? 0 : 1,
+          transition: dragging ? 'none' : 'transform 220ms ease, opacity 200ms ease',
+          touchAction: 'pan-y',
+        }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endSwipe}
+        onPointerCancel={endSwipe}
       >
-        <span className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-line bg-paper-3 text-ink shadow-[var(--shadow-1)]">
+        {/* Stretched, keyboard-accessible navigation target over the whole row */}
+        <button
+          type="button"
+          onClick={navigate}
+          aria-label={`Open echo: ${echo.topic}`}
+          className="peer absolute inset-0 z-10"
+        />
+        {/* Press / hover feedback (reacts to the stretched button via peer-*) */}
+        <span className="pointer-events-none absolute inset-0 transition-colors peer-hover:bg-paper-2 peer-active:bg-line-soft" />
+
+        <span className="pointer-events-none relative flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-line bg-paper-3 text-ink shadow-[var(--shadow-1)]">
           {partial && <ProgressRing p={p} />}
           <PlayIcon size={18} />
         </span>
-        <span className="min-w-0 flex-1">
+        <span className="pointer-events-none relative min-w-0 flex-1">
           <span className="block truncate font-serif text-[18px] font-semibold tracking-[-0.01em] text-ink">
             {echo.topic}
           </span>
@@ -65,22 +183,23 @@ function EchoRow({ echo, onRemove }: { echo: Echo; onRemove: (id: string) => voi
             {done ? ' · finished' : ''} · <RelativeTime iso={echo.createdAt} />
           </span>
         </span>
-      </button>
-      {isNew && (
-        <span className="flex-shrink-0 rounded-pill bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-accent-ink">
-          new
-        </span>
-      )}
-      <button
-        type="button"
-        onClick={() => {
-          if (confirm('Remove this echo from your list?')) onRemove(echo.id);
-        }}
-        className="rounded p-1 text-ink-mute opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
-        aria-label="Remove echo"
-      >
-        ×
-      </button>
+        {isNew && (
+          <span className="pointer-events-none relative flex-shrink-0 rounded-pill bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-accent-ink">
+            new
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm('Remove this echo from your list?')) remove();
+          }}
+          className="relative z-20 rounded p-1 text-ink-mute opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
+          aria-label="Remove echo"
+        >
+          ×
+        </button>
+      </div>
     </li>
   );
 }
