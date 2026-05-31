@@ -6,7 +6,6 @@ import {
   InMemoryEchoRepository,
   MockLlmEngine,
   MockTtsEngine,
-  echoId,
   type Echo,
 } from '../src/_shared/index.js';
 import { echoParams } from './helpers/fixtures.js';
@@ -43,7 +42,7 @@ async function seed(
   overrides: { mode?: 'bilingual' | 'target_only' } = {},
 ): Promise<Echo> {
   const params = echoParams({ mode: overrides.mode ?? 'bilingual' });
-  const id = echoId(params);
+  const id = 'k7Xp2qB9';
   return ctx.echoes.createIfAbsent({
     id,
     params,

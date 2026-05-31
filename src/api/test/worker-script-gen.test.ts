@@ -6,7 +6,6 @@ import {
   InMemoryEchoRepository,
   MockLlmEngine,
   MockTtsEngine,
-  echoId,
   type Echo,
 } from '../src/_shared/index.js';
 import { echoParams } from './helpers/fixtures.js';
@@ -63,7 +62,7 @@ function buildContext(opts: { llmScript?: string; llmThrows?: boolean } = {}): {
 
 async function seedEcho(ctx: ApiContext): Promise<Echo> {
   const params = echoParams();
-  const id = echoId(params);
+  const id = 'k7Xp2qB9';
   return ctx.echoes.createIfAbsent({
     id,
     params,

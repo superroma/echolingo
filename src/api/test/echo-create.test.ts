@@ -6,20 +6,17 @@ import {
   InMemoryEchoRepository,
   MockLlmEngine,
   MockTtsEngine,
-  echoId,
 } from '../src/_shared/index.js';
 import type { HttpRequest } from '@azure/functions';
 import { echoParams } from './helpers/fixtures.js';
 
+const ID = 'k7Xp2qB9';
+
 class FakeQueueClient {
   scriptGen: Array<unknown> = [];
   ttsSentence: Array<unknown> = [];
-  async enqueueScriptGen(job: unknown): Promise<void> {
-    this.scriptGen.push(job);
-  }
-  async enqueueTtsSentence(job: unknown): Promise<void> {
-    this.ttsSentence.push(job);
-  }
+  async enqueueScriptGen(job: unknown): Promise<void> { this.scriptGen.push(job); }
+  async enqueueTtsSentence(job: unknown): Promise<void> { this.ttsSentence.push(job); }
   async ensureQueues(): Promise<void> {}
 }
 
@@ -48,82 +45,57 @@ function buildContext(): { ctx: ApiContext; queue: FakeQueueClient } {
   return { ctx, queue };
 }
 
-function jsonRequest(body: unknown): HttpRequest {
+function putRequest(id: string, body: unknown): HttpRequest {
   return {
-    method: 'POST',
-    url: 'http://localhost/api/echo',
+    method: 'PUT',
+    url: `http://localhost/api/echo/${id}`,
     headers: new Headers({ 'content-type': 'application/json' }),
     query: new URLSearchParams(),
-    params: {},
-    user: null,
-    body: null,
-    bodyUsed: false,
+    params: { id },
+    user: null, body: null, bodyUsed: false,
     arrayBuffer: async () => new ArrayBuffer(0),
     blob: async () => new Blob(),
     formData: async () => new FormData(),
     text: async () => JSON.stringify(body),
     json: async () => body,
-    clone() {
-      return this;
-    },
+    clone() { return this; },
   } as unknown as HttpRequest;
 }
 
 describe('echoCreateHandler', () => {
   let ctx: ApiContext;
   let queue: FakeQueueClient;
+  beforeEach(() => { ({ ctx, queue } = buildContext()); setContextForTests(ctx); });
 
-  beforeEach(() => {
-    ({ ctx, queue } = buildContext());
-    setContextForTests(ctx);
-  });
-
-  it('returns 400 when body is not a valid EchoParams', async () => {
-    const res = await echoCreateHandler(jsonRequest({ topic: '' }));
+  it('returns 400 when the id is malformed', async () => {
+    const res = await echoCreateHandler(putRequest('bad-id!', echoParams()));
     expect(res.status).toBe(400);
   });
 
-  it('returns 201 with id+status for a fresh request', async () => {
-    const params = echoParams();
-    const res = await echoCreateHandler(jsonRequest(params));
+  it('returns 400 when body is not valid EchoParams', async () => {
+    const res = await echoCreateHandler(putRequest(ID, { topic: '' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 201 storing under the supplied id for a fresh request', async () => {
+    const res = await echoCreateHandler(putRequest(ID, echoParams()));
     expect(res.status).toBe(201);
     const body = JSON.parse(res.body as string);
-    expect(body.id).toBe(echoId(params));
+    expect(body.id).toBe(ID);
     expect(body.status).toBe('generating_script');
+    expect(await ctx.echoes.get(ID)).not.toBeNull();
   });
 
-  it('enqueues exactly one scriptGen job on fresh request', async () => {
-    const params = echoParams();
-    await echoCreateHandler(jsonRequest(params));
-    expect(queue.scriptGen).toHaveLength(1);
-    expect(queue.scriptGen[0]).toEqual({ type: 'scriptGen', echoId: echoId(params) });
+  it('enqueues exactly one scriptGen job keyed by the id', async () => {
+    await echoCreateHandler(putRequest(ID, echoParams()));
+    expect(queue.scriptGen).toEqual([{ type: 'scriptGen', echoId: ID }]);
   });
 
-  it('returns 200 (not 201) and skips enqueue when echo already exists', async () => {
-    const params = echoParams();
-    await echoCreateHandler(jsonRequest(params));
+  it('returns 200 and skips enqueue when the echo already exists', async () => {
+    await echoCreateHandler(putRequest(ID, echoParams()));
     queue.scriptGen.length = 0;
-    const res = await echoCreateHandler(jsonRequest(params));
+    const res = await echoCreateHandler(putRequest(ID, echoParams()));
     expect(res.status).toBe(200);
     expect(queue.scriptGen).toHaveLength(0);
-  });
-
-  it('returns 200 when echo is already ready', async () => {
-    const params = echoParams();
-    const id = echoId(params);
-    await ctx.echoes.createIfAbsent({
-      id,
-      params,
-      status: 'ready',
-      createdAt: 'x',
-      updatedAt: 'x',
-      totalSentences: 1,
-      readySentences: 1,
-      sentences: [],
-    });
-    const res = await echoCreateHandler(jsonRequest(params));
-    expect(res.status).toBe(200);
-    const body = JSON.parse(res.body as string);
-    expect(body.status).toBe('ready');
   });
 });

@@ -28,28 +28,27 @@ function jsonResponse(status: number, body: unknown): Response {
 }
 
 describe('createEcho', () => {
-  it('POSTs JSON body to /api/echo and returns the id', async () => {
-    fetchMock.mockResolvedValue(jsonResponse(201, { id: 'abc', status: 'generating_script' }));
-    const result = await createEcho(params);
-    expect(result).toEqual({ kind: 'created', id: 'abc', status: 'generating_script' });
+  it('PUTs JSON params to /api/echo/{id} and returns the id', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(201, { id: 'k7Xp2qB9', status: 'generating_script' }));
+    const result = await createEcho('k7Xp2qB9', params);
+    expect(result).toEqual({ kind: 'created', id: 'k7Xp2qB9', status: 'generating_script' });
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe('/api/echo');
-    expect(init.method).toBe('POST');
-    expect(init.headers).toEqual({ 'content-type': 'application/json' });
+    expect(url).toBe('/api/echo/k7Xp2qB9');
+    expect(init.method).toBe('PUT');
     expect(JSON.parse(init.body)).toEqual(params);
   });
 
   it('returns kind=existing on 200', async () => {
-    fetchMock.mockResolvedValue(jsonResponse(200, { id: 'abc', status: 'ready' }));
-    const result = await createEcho(params);
-    expect(result).toEqual({ kind: 'existing', id: 'abc', status: 'ready' });
+    fetchMock.mockResolvedValue(jsonResponse(200, { id: 'k7Xp2qB9', status: 'ready' }));
+    const result = await createEcho('k7Xp2qB9', params);
+    expect(result).toEqual({ kind: 'existing', id: 'k7Xp2qB9', status: 'ready' });
   });
 
   it('returns kind=rate_limited on 429', async () => {
     fetchMock.mockResolvedValue(
       jsonResponse(429, { limit: 20, used: 20, resetAt: '2026-05-20T00:00:00Z' }),
     );
-    const result = await createEcho(params);
+    const result = await createEcho('k7Xp2qB9', params);
     expect(result).toEqual({
       kind: 'rate_limited',
       limit: 20,
@@ -60,7 +59,7 @@ describe('createEcho', () => {
 
   it('returns kind=error on 400/500', async () => {
     fetchMock.mockResolvedValue(jsonResponse(400, { error: 'invalid EchoParams' }));
-    const result = await createEcho(params);
+    const result = await createEcho('k7Xp2qB9', params);
     expect(result).toEqual({ kind: 'error', status: 400, message: 'invalid EchoParams' });
   });
 });

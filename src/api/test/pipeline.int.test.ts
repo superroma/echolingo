@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import {
   MockLlmEngine,
   MockTtsEngine,
-  echoId,
 } from '../src/_shared/index.js';
 import { BlobEchoRepository } from '../src/storage/blob-echo-repository.js';
 import { BlobAudioStorage } from '../src/storage/blob-audio-storage.js';
@@ -26,13 +25,13 @@ const TTS_Q = 'tts-sentence-it-15';
 
 const CANNED = ['Καλημέρα.||Good morning.', 'Γεια σου.||Hello.'].join('\n');
 
-function postRequest(body: unknown): HttpRequest {
+function putRequest(id: string, body: unknown): HttpRequest {
   return {
-    method: 'POST',
-    url: 'http://localhost/api/echo',
+    method: 'PUT',
+    url: `http://localhost/api/echo/${id}`,
     headers: new Headers({ 'content-type': 'application/json' }),
     query: new URLSearchParams(),
-    params: {},
+    params: { id },
     user: null,
     body: null,
     bodyUsed: false,
@@ -122,13 +121,14 @@ describe('pipeline end-to-end (integration)', () => {
     setContextForTests(ctx);
   });
 
-  it('POST → workers → GET produces a ready echo with audio URLs', async (testCtx) => {
+  it('PUT → workers → GET produces a ready echo with audio URLs', async (testCtx) => {
     if (!connStr) testCtx.skip();
     const params = echoParams();
-    const createRes = await echoCreateHandler(postRequest(params));
+    const ECHO_ID = 'k7Xp2qB9';
+    const createRes = await echoCreateHandler(putRequest(ECHO_ID, params));
     expect(createRes.status).toBe(201);
     const { id } = JSON.parse(createRes.body as string);
-    expect(id).toBe(echoId(params));
+    expect(id).toBe(ECHO_ID);
 
     const scriptJobs = await drain(connStr!, SCRIPT_Q);
     expect(scriptJobs).toEqual([{ type: 'scriptGen', echoId: id }]);

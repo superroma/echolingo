@@ -1,4 +1,5 @@
 import { app, type HttpRequest, type HttpResponseInit } from '@azure/functions';
+import { isEchoId } from '../_shared/index.js';
 import { getContext } from '../context.js';
 import { concatMp3 } from '../lib/concat-mp3.js';
 import { BlobServiceClient } from '@azure/storage-blob';
@@ -9,7 +10,7 @@ const FULL_BLOB_NAME = 'full.mp3';
 
 export async function echoDownloadHandler(req: HttpRequest): Promise<HttpResponseInit> {
   const id = req.params.id;
-  if (!id) return json(400, { error: 'missing id' });
+  if (!isEchoId(id)) return json(400, { error: 'invalid id' });
   const ctx = getContext();
   const echo = await ctx.echoes.get(id);
   if (!echo) return json(404, { error: 'echo not found' });

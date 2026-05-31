@@ -58,16 +58,16 @@ function buildContext(limit: number): { ctx: ApiContext; rates: CountingRateLimi
   return { ctx, rates };
 }
 
-function jsonRequest(body: unknown, ip = '1.2.3.4'): HttpRequest {
+function putRequest(id: string, body: unknown, ip = '1.2.3.4'): HttpRequest {
   return {
-    method: 'POST',
-    url: 'http://localhost/api/echo',
+    method: 'PUT',
+    url: `http://localhost/api/echo/${id}`,
     headers: new Headers({
       'content-type': 'application/json',
       'x-forwarded-for': ip,
     }),
     query: new URLSearchParams(),
-    params: {},
+    params: { id },
     user: null,
     body: null,
     bodyUsed: false,
@@ -82,7 +82,7 @@ function jsonRequest(body: unknown, ip = '1.2.3.4'): HttpRequest {
   } as unknown as HttpRequest;
 }
 
-describe('POST /api/echo rate limiting', () => {
+describe('PUT /api/echo/{id} rate limiting', () => {
   let ctx: ApiContext;
 
   beforeEach(() => {
@@ -91,9 +91,9 @@ describe('POST /api/echo rate limiting', () => {
   });
 
   it('counts a new echo against the IP daily quota', async () => {
-    await echoCreateHandler(jsonRequest(echoParams({ topic: 'one' })));
-    await echoCreateHandler(jsonRequest(echoParams({ topic: 'two' })));
-    const res = await echoCreateHandler(jsonRequest(echoParams({ topic: 'three' })));
+    await echoCreateHandler(putRequest('aaaaaaa1', echoParams()));
+    await echoCreateHandler(putRequest('aaaaaaa2', echoParams()));
+    const res = await echoCreateHandler(putRequest('aaaaaaa3', echoParams()));
     expect(res.status).toBe(429);
     const body = JSON.parse(res.body as string);
     expect(body.limit).toBe(2);
@@ -102,26 +102,26 @@ describe('POST /api/echo rate limiting', () => {
   });
 
   it('cache hits do not consume rate-limit quota', async () => {
-    const params = echoParams({ topic: 'shared' });
-    const a = await echoCreateHandler(jsonRequest(params));
+    const params = echoParams();
+    const a = await echoCreateHandler(putRequest('shared01', params));
     expect(a.status).toBe(201);
-    const b = await echoCreateHandler(jsonRequest(params));
+    const b = await echoCreateHandler(putRequest('shared01', params));
     expect(b.status).toBe(200);
-    const c = await echoCreateHandler(jsonRequest(echoParams({ topic: 'fresh' })));
+    const c = await echoCreateHandler(putRequest('fresh001', echoParams()));
     expect(c.status).toBe(201);
-    const d = await echoCreateHandler(jsonRequest(echoParams({ topic: 'fourth' })));
+    const d = await echoCreateHandler(putRequest('fourth01', echoParams()));
     expect(d.status).toBe(429);
   });
 
   it('separates counters per IP', async () => {
-    await echoCreateHandler(jsonRequest(echoParams({ topic: 'a' }), '1.1.1.1'));
-    await echoCreateHandler(jsonRequest(echoParams({ topic: 'b' }), '1.1.1.1'));
+    await echoCreateHandler(putRequest('ipaaaaa1', echoParams(), '1.1.1.1'));
+    await echoCreateHandler(putRequest('ipaaaaa2', echoParams(), '1.1.1.1'));
     const blocked = await echoCreateHandler(
-      jsonRequest(echoParams({ topic: 'c' }), '1.1.1.1'),
+      putRequest('ipaaaaa3', echoParams(), '1.1.1.1'),
     );
     expect(blocked.status).toBe(429);
     const otherIp = await echoCreateHandler(
-      jsonRequest(echoParams({ topic: 'd' }), '2.2.2.2'),
+      putRequest('ipbbbbb1', echoParams(), '2.2.2.2'),
     );
     expect(otherIp.status).toBe(201);
   });

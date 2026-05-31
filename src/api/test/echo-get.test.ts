@@ -66,8 +66,13 @@ describe('echoGetHandler', () => {
     setContextForTests(ctx);
   });
 
-  it('returns 404 for unknown echo id', async () => {
+  it('returns 400 for a malformed echo id', async () => {
     const res = await echoGetHandler(getRequest('does-not-exist'));
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 404 for unknown echo id', async () => {
+    const res = await echoGetHandler(getRequest('zzzzzzzz'));
     expect(res.status).toBe(404);
   });
 

@@ -30,9 +30,9 @@ async function readJson(res: Response): Promise<Record<string, unknown>> {
   }
 }
 
-export async function createEcho(params: EchoParams): Promise<CreateEchoResult> {
-  const res = await fetch(`${API_BASE_URL}/api/echo`, {
-    method: 'POST',
+export async function createEcho(id: string, params: EchoParams): Promise<CreateEchoResult> {
+  const res = await fetch(`${API_BASE_URL}/api/echo/${encodeURIComponent(id)}`, {
+    method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(params),
   });

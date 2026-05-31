@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { BlobEchoRepository } from '../src/storage/blob-echo-repository.js';
-import { echoId, type Echo } from '../src/_shared/index.js';
+import { type Echo } from '../src/_shared/index.js';
 import { AZURITE_CONNECTION_STRING, isAzuriteReachable } from './helpers/azurite.js';
 import { resetContainer } from './helpers/containers.js';
 import { echoParams } from './helpers/fixtures.js';
@@ -10,7 +10,7 @@ const CONTAINER = 'echoes-test-7';
 function makeEcho(): Echo {
   const params = echoParams();
   return {
-    id: echoId(params),
+    id: 'k7Xp2qB9',
     params,
     status: 'generating_script',
     createdAt: '2026-05-17T00:00:00Z',

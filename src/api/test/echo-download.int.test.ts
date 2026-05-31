@@ -24,13 +24,13 @@ const SCRIPT_Q = 'script-gen-download-it';
 const TTS_Q = 'tts-sentence-download-it';
 const RATES = 'rate-limits-download-it';
 
-function postRequest(body: unknown): HttpRequest {
+function putRequest(id: string, body: unknown): HttpRequest {
   return {
-    method: 'POST',
-    url: 'http://localhost/api/echo',
+    method: 'PUT',
+    url: `http://localhost/api/echo/${id}`,
     headers: new Headers({ 'content-type': 'application/json', 'x-forwarded-for': '1.1.1.1' }),
     query: new URLSearchParams(),
-    params: {},
+    params: { id },
     user: null,
     body: null,
     bodyUsed: false,
@@ -104,7 +104,7 @@ describe('POST /api/echo/{id}/download (integration)', () => {
   });
 
   async function makeReadyEcho(): Promise<string> {
-    const createRes = await echoCreateHandler(postRequest(echoParams()));
+    const createRes = await echoCreateHandler(putRequest('k7Xp2qB9', echoParams()));
     const { id } = JSON.parse(createRes.body as string);
     await scriptGenWorker({ type: 'scriptGen', echoId: id });
     const echoRes = await echoGetHandler(downloadRequest(id));
@@ -117,13 +117,13 @@ describe('POST /api/echo/{id}/download (integration)', () => {
 
   it('returns 404 for unknown echo', async (ctx) => {
     if (!connStr) ctx.skip();
-    const res = await echoDownloadHandler(downloadRequest('does-not-exist'));
+    const res = await echoDownloadHandler(downloadRequest('zzzzzzzz'));
     expect(res.status).toBe(404);
   });
 
   it('returns 409 when echo is not ready', async (ctx) => {
     if (!connStr) ctx.skip();
-    const createRes = await echoCreateHandler(postRequest(echoParams()));
+    const createRes = await echoCreateHandler(putRequest('k7Xp2qB9', echoParams()));
     const { id } = JSON.parse(createRes.body as string);
     const res = await echoDownloadHandler(downloadRequest(id));
     expect(res.status).toBe(409);

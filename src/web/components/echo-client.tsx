@@ -17,6 +17,7 @@ import {
   totalDuration,
   chunkAtElapsed,
 } from '../hooks/playlist-math';
+import { echoId } from '@echolingo/shared';
 import { createEcho, type CreateEchoResult } from '../lib/api';
 
 export function EchoClient({ id }: { id: string }) {
@@ -87,18 +88,13 @@ function ExistingEcho({ id }: { id: string }) {
       void (async () => {
         let result: CreateEchoResult;
         try {
-          result = await createEcho(params);
+          result = await createEcho(id, params);
         } catch (e) {
           setCreating({ kind: 'network_error', message: (e as Error).message });
           return;
         }
         if (result.kind === 'created' || result.kind === 'existing') {
           clearPendingParams(id);
-          if (result.id !== id) {
-            // Self-correct if our computed id ever diverged from the server's.
-            router.replace(`/echo/${result.id}/`);
-            return;
-          }
           setReloadToken((t) => t + 1); // re-poll; the echo now exists
         } else if (result.kind === 'rate_limited') {
           setCreating({ kind: 'rate_limited', limit: result.limit, used: result.used, resetAt: result.resetAt });
@@ -107,7 +103,7 @@ function ExistingEcho({ id }: { id: string }) {
         }
       })();
     },
-    [id, router],
+    [id],
   );
 
   useEffect(() => {
@@ -220,7 +216,8 @@ function ExistingEcho({ id }: { id: string }) {
     setRetrying({ kind: 'creating' });
     let result: CreateEchoResult;
     try {
-      result = await createEcho(echo.params);
+      const newId = await echoId(echo.params);
+      result = await createEcho(newId, echo.params);
     } catch (e) {
       setRetrying({ kind: 'network_error', message: (e as Error).message });
       return;
