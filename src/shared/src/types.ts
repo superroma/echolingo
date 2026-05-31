@@ -92,6 +92,13 @@ export interface Echo {
   error?: string;
 }
 
+/** Echo ids are 1–16 base62 chars. The web mints 8; the cap leaves headroom. */
+export const ECHO_ID_RE = /^[0-9A-Za-z]{1,16}$/;
+
+export function isEchoId(v: unknown): v is string {
+  return typeof v === 'string' && ECHO_ID_RE.test(v);
+}
+
 export function isEchoParams(v: unknown): v is EchoParams {
   if (typeof v !== 'object' || v === null) return false;
   const o = v as Record<string, unknown>;

@@ -9,6 +9,7 @@ import {
   CEFR_LABEL,
   cefr,
   isEchoParams,
+  isEchoId,
   type EchoParams,
 } from '../src/types.js';
 
@@ -118,5 +119,22 @@ describe('CEFR levels', () => {
       ttsEngine: 'openai',
     };
     expect(isEchoParams(params)).toBe(true);
+  });
+});
+
+describe('isEchoId', () => {
+  it('accepts 1–16 base62 chars', () => {
+    expect(isEchoId('k7Xp2qB9')).toBe(true);
+    expect(isEchoId('a')).toBe(true);
+    expect(isEchoId('0123456789abcdef')).toBe(true); // 16
+  });
+  it('rejects empty, too long, and non-base62', () => {
+    expect(isEchoId('')).toBe(false);
+    expect(isEchoId('0123456789abcdefg')).toBe(false); // 17
+    expect(isEchoId('has-hyphen')).toBe(false);
+    expect(isEchoId('has.dot')).toBe(false);
+    expect(isEchoId('../etc')).toBe(false);
+    expect(isEchoId('späce')).toBe(false);
+    expect(isEchoId(42)).toBe(false);
   });
 });
