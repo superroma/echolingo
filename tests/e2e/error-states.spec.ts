@@ -14,7 +14,9 @@ test.describe('error states', () => {
     await page.getByPlaceholder(/at the bakery/i).fill('anything');
     await page.getByRole('button', { name: /^go$/i }).click();
 
-    await expect(page).toHaveURL(/\/echo\/new/);
+    // Submit now links straight to the deterministic /echo/{id} (no /echo/new
+    // round-trip); that page POSTs and surfaces the rate-limit card.
+    await expect(page).toHaveURL(/\/echo\/[^/]+\/?$/);
     await expect(page.getByText('Daily limit reached')).toBeVisible();
     await expect(page.getByText('Used 5 of 5')).toBeVisible();
   });

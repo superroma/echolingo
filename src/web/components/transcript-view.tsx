@@ -18,10 +18,20 @@ export function TranscriptView({
   const currentRef = useRef<HTMLLIElement | null>(null);
   const manualScrollUntil = useRef<number>(0);
 
-  // The scroll region is the transcript's parent (so a shared-link strip/card
-  // scroll together with the lines); fall back to the list itself.
+  // The scroll region is the nearest scrollable ancestor of the transcript (so a
+  // shared-link strip/card scroll together with the lines). The transcript's
+  // direct parent is a non-scrolling max-w-2xl layout wrapper, so walking up to
+  // the element that actually overflows is required — scrolling the wrapper is a
+  // no-op and leaves the current line drifting below the fold. Fall back to the
+  // list itself if no scrollable ancestor is found.
   function scrollBox(): HTMLElement | null {
-    return containerRef.current?.parentElement ?? containerRef.current;
+    let el = containerRef.current?.parentElement ?? null;
+    while (el) {
+      const oy = getComputedStyle(el).overflowY;
+      if (oy === 'auto' || oy === 'scroll') return el;
+      el = el.parentElement;
+    }
+    return containerRef.current;
   }
 
   useEffect(() => {
@@ -45,7 +55,8 @@ export function TranscriptView({
     if (!el || !box) return;
     const elRect = el.getBoundingClientRect();
     const boxRect = box.getBoundingClientRect();
-    const delta = elRect.top - boxRect.top - box.clientHeight * 0.3;
+    // Center the active line vertically within the scroll viewport.
+    const delta = elRect.top - boxRect.top - (box.clientHeight - elRect.height) / 2;
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     box.scrollBy({ top: delta, behavior: smooth ? 'smooth' : 'auto' });
   }, [currentSentence]);

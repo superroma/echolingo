@@ -180,6 +180,11 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string): {
   }, []);
 
   // Persist playback position so reopening an echo resumes where it left off.
+  // Depend on playlist.length too: the <audio> element mounts only once the
+  // lesson is ready (loading -> ready), so this must re-run when the playlist
+  // fills (0 -> N) to bind the listener to the now-present element. Without it,
+  // the effect runs once with a null ref, never rebinds, and no position is ever
+  // saved — which made every echo show as "new" forever.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !echoId) return;
@@ -188,7 +193,7 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string): {
     };
     audio.addEventListener('timeupdate', onTime);
     return () => audio.removeEventListener('timeupdate', onTime);
-  }, [echoId]);
+  }, [echoId, playlist.length]);
 
   // MediaSession integration (lockscreen / Now-Playing controls)
   useEffect(() => {

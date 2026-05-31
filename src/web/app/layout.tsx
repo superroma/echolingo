@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           `}
         </Script>
       </head>
-      <body className="min-h-screen bg-paper font-sans text-ink antialiased">
+      <body className="min-h-dvh bg-paper font-sans text-ink antialiased">
         {children}
         <Script id="register-sw" strategy="afterInteractive">
           {`
