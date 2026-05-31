@@ -8,16 +8,9 @@ const nextConfig = {
   reactStrictMode: true,
   trailingSlash: true,
   images: { unoptimized: true },
-  async rewrites() {
-    // Dev only — in production Azure Static Web Apps' linked-Functions feature
-    // proxies /api/* to the Function App natively.
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:7071/api/:path*',
-      },
-    ];
-  },
+  // No /api rewrite here on purpose: routing /api/* to the Functions host is the
+  // Static Web Apps platform's job. In prod the SWA linked backend proxies it; in
+  // dev the SWA CLI (`swa start`) does the same. Next only serves the frontend.
 };
 
 export default nextConfig;

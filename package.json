@@ -18,13 +18,15 @@
     "test:e2e": "playwright test",
     "build": "npm run build --workspaces --if-present",
     "predev": "npm run build --workspace @echolingo/shared",
-    "dev": "concurrently --kill-others --names azurite,shared,api,web --prefix-colors gray,magenta,blue,green \"npm:azurite\" \"npm:dev:shared\" \"npm:dev:api\" \"npm:dev:web\"",
+    "dev": "concurrently --kill-others --names azurite,shared,api,web,swa --prefix-colors gray,magenta,blue,green,cyan \"npm:azurite\" \"npm:dev:shared\" \"npm:dev:api\" \"npm:dev:web\" \"npm:dev:swa\"",
     "dev:shared": "npm run dev --workspace @echolingo/shared",
     "dev:web": "npm run dev --workspace @echolingo/web",
     "dev:api": "npm run start --workspace @echolingo/api",
+    "dev:swa": "swa start --app-devserver-url http://localhost:3000 --api-devserver-url http://localhost:7071",
     "azurite": "azurite --location ./azurite-data --silent --skipApiVersionCheck"
   },
   "devDependencies": {
+    "@azure/static-web-apps-cli": "^2.0.9",
     "@eslint/js": "^9.14.0",
     "@playwright/test": "^1.60.0",
     "azurite": "^3.32.0",

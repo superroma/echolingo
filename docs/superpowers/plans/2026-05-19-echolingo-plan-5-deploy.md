@@ -1889,7 +1889,7 @@ When `azd up` finishes, it prints `WEB_URL`. Open it in a browser and submit a l
 ## What Plan 5 does NOT include (handed off)
 
 - **Web PubSub** — frontend still polls `GET /api/lesson/{id}` every 2s. Reasonable for v1; add WebSockets later if polling becomes a bottleneck.
-- **Custom domain** on the Static Web App — defer until you're sure you want one. Add via `azd env set CUSTOM_DOMAIN echolingo.com` plus a `Microsoft.Web/staticSites/customDomains` resource.
+- ~~**Custom domain** on the Static Web App — defer until you're sure you want one.~~ **Done (2026-05-31):** `echolingo.audio` apex + `www` are bound via an Azure DNS zone (`infra/modules/dns.bicep`) and `infra/modules/custom-domain.bicep` (`customDomains` + records), on a Standard-SKU SWA with a linked backend. The apex `dns-txt-token` validation is a one-time bootstrap (see README → Custom domain); thereafter `azd up` is idempotent.
 - **Multi-environment promotion** (dev → staging → prod) — current deploy targets one env at a time. Add a separate `dev` env when you want a staging tier.
 - **Private network** isolation (private endpoints, VNet integration). Plan 5 deploys with public network access; for a personal app that's appropriate. Tighten later if you handle PII.
 - **Frame-aware MP3 concat** — still raw `Buffer.concat`; works for OpenAI tts output on iOS Safari and Chrome.

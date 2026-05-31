@@ -1,6 +1,10 @@
 import type { Lesson, LessonParams } from '@echolingo/shared/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
+// All API calls use relative /api/* paths — never the Function App hostname
+// directly. Locally, next.config.mjs rewrites /api/* to the Functions host
+// (localhost:7071); in production the Static Web App's linked backend proxies
+// /api/* to the Function App. Same-origin everywhere, so no CORS needed.
+const API_BASE_URL = '';
 
 export type CreateLessonResult =
   | { kind: 'created'; id: string; status: string }

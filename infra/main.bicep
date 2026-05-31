@@ -131,7 +131,25 @@ module staticWebApp './modules/static-web-app.bicep' = {
     environmentName: environmentName
     location: 'westeurope'
     tags: tags
+    linkedFunctionAppResourceId: functionApp.outputs.functionAppResourceId
   }
+}
+
+// Bind the apex + www custom domains to the Static Web App and create the DNS
+// records in the (delegated) Azure DNS zone. Only when a domain is configured.
+module customDomain './modules/custom-domain.bicep' = if (!empty(domainName)) {
+  scope: rg
+  name: 'customDomain'
+  params: {
+    domainName: domainName
+    dnsZoneName: domainName
+    staticWebAppName: staticWebApp.outputs.staticWebAppName
+    staticWebAppResourceId: staticWebApp.outputs.staticWebAppResourceId
+    staticWebAppDefaultHostname: staticWebApp.outputs.defaultHostnameRaw
+  }
+  dependsOn: [
+    dns
+  ]
 }
 
 output AZURE_LOCATION string = location
@@ -144,6 +162,9 @@ output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.appInsi
 output FUNCTION_APP_NAME string = functionApp.outputs.functionAppName
 output FUNCTION_APP_URL string = 'https://${functionApp.outputs.defaultHostname}'
 output WEB_URL string = staticWebApp.outputs.defaultHostname
-output NEXT_PUBLIC_API_BASE_URL string = 'https://${functionApp.outputs.defaultHostname}'
+// The frontend calls relative /api/* (proxied by the SWA linked backend), so it no
+// longer needs the Function App URL baked in at build time.
 output DNS_ZONE_NAME string = empty(domainName) ? '' : dns.outputs.dnsZoneName
 output DNS_NAME_SERVERS array = empty(domainName) ? [] : dns.outputs.dnsNameServers
+output CUSTOM_DOMAIN_URL string = empty(domainName) ? '' : customDomain.outputs.apexUrl
+output CUSTOM_DOMAIN_WWW_URL string = empty(domainName) ? '' : customDomain.outputs.wwwUrl
