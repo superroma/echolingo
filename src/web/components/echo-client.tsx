@@ -70,7 +70,7 @@ function ExistingEcho({ id }: { id: string }) {
   const [retrying, setRetrying] = useState<CreateState | null>(null);
   const [showTranslation, setShowTranslation] = useState(true);
 
-  // Create-on-arrival: the home form links to /echo/{id} (id is deterministic)
+  // Create-on-arrival: the home form links to /{id} (id is deterministic)
   // and stashes the params in sessionStorage. If the echo doesn't exist yet,
   // POST it once, then bump the poll token so useEcho picks it up. Shared links
   // carry no stashed params (the echo already exists), so this is skipped.
@@ -234,7 +234,7 @@ function ExistingEcho({ id }: { id: string }) {
         createdAt: new Date().toISOString(),
         lastStatus: 'generating_script',
       });
-      router.replace(`/echo/${result.id}/`);
+      router.replace(`/${result.id}/`);
       return;
     }
     if (result.kind === 'rate_limited') {

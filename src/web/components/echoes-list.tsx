@@ -48,7 +48,7 @@ function EchoRow({ echo, onRemove }: { echo: Echo; onRemove: (id: string) => voi
     <li className="group flex items-center gap-3.5 border-b border-line-soft py-4 last:border-b-0">
       <button
         type="button"
-        onClick={() => router.push(`/echo/${echo.id}/`)}
+        onClick={() => router.push(`/${echo.id}/`)}
         className="flex flex-1 items-center gap-3.5 text-left"
       >
         <span className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-line bg-paper-3 text-ink shadow-[var(--shadow-1)]">

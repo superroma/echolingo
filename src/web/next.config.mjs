@@ -3,7 +3,7 @@ const isProductionBuild = process.env.NODE_ENV === 'production';
 
 const nextConfig = {
   // Only emit static export at build time. In `next dev` we want the full
-  // server router so dynamic /echo/[id] routes accept any id.
+  // server router so dynamic /[id] routes accept any id.
   ...(isProductionBuild ? { output: 'export' } : {}),
   reactStrictMode: true,
   trailingSlash: true,

@@ -19,7 +19,7 @@ export default defineConfig({
     // Pure-logic tests run in node. Component/DOM tests opt into jsdom per-file
     // with a `// @vitest-environment jsdom` docblock at the top of the file, so
     // the existing node-env tests are unaffected.
-    include: ['{lib,hooks,components}/**/*.test.{ts,tsx}'],
+    include: ['{lib,hooks,components,app}/**/*.test.{ts,tsx}'],
     environment: 'node',
     setupFiles: ['./test/setup.ts'],
   },

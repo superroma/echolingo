@@ -8,7 +8,7 @@ test.describe('shared echo discovery', () => {
       { id: 'shared-1', status: 'ready', topic: 'a walk through Plaka' },
     ]);
 
-    await page.goto('/echo/shared-1/');
+    await page.goto('/shared-1/');
     // Wait for the echo to load (the title in the AppBar reflects the topic)
     await expect(page.getByRole('heading', { name: 'a walk through Plaka' })).toBeVisible();
 
@@ -25,11 +25,11 @@ test.describe('shared echo discovery', () => {
       { id: 'shared-2', status: 'ready', topic: 'morning at the bakery' },
     ]);
 
-    await page.goto('/echo/shared-2/');
+    await page.goto('/shared-2/');
     await expect(page.getByRole('heading', { name: 'morning at the bakery' })).toBeVisible();
 
     await page.getByRole('link', { name: '+ new' }).click();
-    // Must reach the create surface (home), with a usable form — NOT /echo/new
+    // Must reach the create surface (home), with a usable form — NOT /new
     // with no params, which renders "Missing or invalid parameters."
     await expect(page).toHaveURL(/localhost:\d+\/$/);
     await expect(page.getByPlaceholder(/at the bakery/i)).toBeVisible();
@@ -44,7 +44,7 @@ test.describe('shared echo discovery', () => {
     ]);
 
     // Fresh visitor (empty library): conversion card is shown.
-    await page.goto('/echo/shared-3/');
+    await page.goto('/shared-3/');
     await expect(page.getByRole('heading', { name: 'a day trip to Hydra' })).toBeVisible();
     await expect(page.getByText('make your own echo')).toBeVisible();
 

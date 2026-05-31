@@ -78,6 +78,6 @@ test.describe('echoes list', () => {
 
     await page.goto('/');
     await page.getByText('bakery topic').click();
-    await expect(page).toHaveURL(/\/echo\/e-a\/?/);
+    await expect(page).toHaveURL(/\/e-a\/?/);
   });
 });

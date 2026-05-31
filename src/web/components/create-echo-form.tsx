@@ -72,16 +72,16 @@ export function CreateEchoForm({ showSuggestions = false }: { showSuggestions?: 
       ttsEngine: 'openai',
     };
     // The id is deterministic from the params (same hash the API uses), so we
-    // can link straight to /echo/{id}. Stash the params so that page can create
+    // can link straight to /{id}. Stash the params so that page can create
     // the echo if it doesn't exist yet; shared links omit them (the echo
     // already exists server-side by then).
     const id = await echoId(params);
     try {
       sessionStorage.setItem(`echo:create:${id}`, JSON.stringify(params));
     } catch {
-      // ignore storage failures — /echo/{id} falls back to "not found"
+      // ignore storage failures — /{id} falls back to "not found"
     }
-    router.push(`/echo/${id}/`);
+    router.push(`/${id}/`);
   }
 
   const fillPct = ((prefs.level - 1) / (CEFR_TICKS.length - 1)) * 100;

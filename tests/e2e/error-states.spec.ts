@@ -14,9 +14,9 @@ test.describe('error states', () => {
     await page.getByPlaceholder(/at the bakery/i).fill('anything');
     await page.getByRole('button', { name: /^go$/i }).click();
 
-    // Submit now links straight to the deterministic /echo/{id} (no /echo/new
+    // Submit now links straight to the deterministic /{id} (no /new
     // round-trip); that page POSTs and surfaces the rate-limit card.
-    await expect(page).toHaveURL(/\/echo\/[^/]+\/?$/);
+    await expect(page).toHaveURL(/\/[^/]+\/?$/);
     await expect(page.getByText('Daily limit reached')).toBeVisible();
     await expect(page.getByText('Used 5 of 5')).toBeVisible();
   });
@@ -50,7 +50,7 @@ test.describe('error states', () => {
     await expect(page.getByText("Couldn't reach the server")).toBeVisible();
     await page.getByRole('button', { name: 'Retry' }).click();
 
-    await expect(page).toHaveURL(new RegExp(`/echo/${id}/?$`));
+    await expect(page).toHaveURL(new RegExp(`/${id}/?$`));
   });
 
   test('failed echo shows Retry; retry posts again and navigates to new id', async ({
@@ -86,18 +86,18 @@ test.describe('error states', () => {
     await mockCreateEcho(page, { kind: 'created', id: newId });
     await mockGetEcho(page, newId, [{ id: newId, status: 'generating_script' }]);
 
-    await page.goto(`/echo/${originalId}/`);
+    await page.goto(`/${originalId}/`);
     await expect(page.getByText('Generation failed')).toBeVisible();
     await expect(page.getByText('LLM exploded')).toBeVisible();
 
     await page.getByRole('button', { name: 'Retry' }).click();
-    await expect(page).toHaveURL(new RegExp(`/echo/${newId}/?$`));
+    await expect(page).toHaveURL(new RegExp(`/${newId}/?$`));
   });
 
   test('GET 404 on existing echo shows not-found view', async ({ page }) => {
     const id = 'gone';
     await mockGetEcho(page, id, [{ kind: 'not_found' }]);
-    await page.goto(`/echo/${id}/`);
+    await page.goto(`/${id}/`);
     await expect(page.getByText('Echo not found')).toBeVisible();
   });
 });

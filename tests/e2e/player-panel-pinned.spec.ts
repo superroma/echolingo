@@ -38,7 +38,7 @@ test.describe('player panel stays pinned to the viewport', () => {
     ]);
 
     await page.setViewportSize({ width: 390, height: 720 }); // iPhone-class portrait
-    await page.goto('/echo/pinned-1/');
+    await page.goto('/pinned-1/');
     await expect(page.getByRole('heading', { name: 'long echo' })).toBeVisible();
     // The <audio> element renders only in the ready/player state, so waiting for
     // it guarantees the dvh player shell is mounted (no silent shell-missing pass).

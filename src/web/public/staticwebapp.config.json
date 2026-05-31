@@ -1,9 +1,6 @@
 {
-  "routes": [
-    { "route": "/echo/*", "rewrite": "/echo/shell/index.html" }
-  ],
   "navigationFallback": {
-    "rewrite": "/index.html",
+    "rewrite": "/shell/index.html",
     "exclude": ["/_next/*", "/api/*", "/*.{ico,png,jpg,svg,webmanifest,js,css,mp3}"]
   },
   "globalHeaders": {

@@ -24,7 +24,7 @@ test.describe('create echo flow', () => {
     await page.getByPlaceholder(/at the bakery/i).fill('ordering coffee');
     await page.getByRole('button', { name: /^go$/i }).click();
 
-    await expect(page).toHaveURL(new RegExp(`/echo/${id}/?$`));
+    await expect(page).toHaveURL(new RegExp(`/${id}/?$`));
     await expect(page.getByText(/composing your echo…/i)).toBeVisible({ timeout: 10_000 });
   });
 
@@ -40,7 +40,7 @@ test.describe('create echo flow', () => {
     await page.goto('/');
     await page.getByPlaceholder(/at the bakery/i).fill('a walk through Plaka');
     await page.getByRole('button', { name: /^go$/i }).click();
-    await expect(page).toHaveURL(new RegExp(`/echo/${id}/?$`));
+    await expect(page).toHaveURL(new RegExp(`/${id}/?$`));
 
     // Go back to home — echo should be in the list
     await page.getByRole('link', { name: 'echolingo' }).click();

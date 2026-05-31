@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { EchoClient } from '../../../components/echo-client';
+import { EchoClient } from '../../components/echo-client';
 
-function readIdFromPath(): string {
+export function readIdFromPath(): string {
   if (typeof window === 'undefined') return '';
   const parts = window.location.pathname.split('/').filter(Boolean);
-  return parts[1] ?? '';
+  return parts[0] ?? '';
 }
 
 export function EchoByIdClient() {
