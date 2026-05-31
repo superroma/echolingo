@@ -1,14 +1,17 @@
 import { test, expect } from './fixture';
-import { mockCreateEcho, mockGetEcho } from './helpers';
+import { mockCreateEcho, mockGetEchoAny } from './helpers';
+
+// The client mints the 8-char id locally and navigates to /{id}; the server
+// just echoes it back. Tests therefore assert the id *shape*, not a fixed value,
+// and use the id-agnostic GET mock.
+const ID_URL = /\/[0-9A-Za-z]{8}\/?$/;
 
 test.describe('create echo flow', () => {
   test('submitting navigates to new echo page and shows progress', async ({ page }) => {
-    const id = 'abc123';
-    await mockCreateEcho(page, { kind: 'created', id });
-    await mockGetEcho(page, id, [
-      { id, status: 'generating_script' },
+    await mockCreateEcho(page, { kind: 'created' });
+    await mockGetEchoAny(page, [
+      { status: 'generating_script' },
       {
-        id,
         status: 'generating_audio',
         totalSentences: 3,
         readySentences: 1,
@@ -24,23 +27,22 @@ test.describe('create echo flow', () => {
     await page.getByPlaceholder(/at the bakery/i).fill('ordering coffee');
     await page.getByRole('button', { name: /^go$/i }).click();
 
-    await expect(page).toHaveURL(new RegExp(`/${id}/?$`));
+    await expect(page).toHaveURL(ID_URL);
     await expect(page.getByText(/composing your echo…/i)).toBeVisible({ timeout: 10_000 });
   });
 
   test('adds the new echo to the local echoes list (visible after going home)', async ({
     page,
   }) => {
-    const id = 'persisted-1';
-    await mockCreateEcho(page, { kind: 'created', id });
-    await mockGetEcho(page, id, [
-      { id, status: 'generating_script', topic: 'a walk through Plaka' },
+    await mockCreateEcho(page, { kind: 'created' });
+    await mockGetEchoAny(page, [
+      { status: 'generating_script', topic: 'a walk through Plaka' },
     ]);
 
     await page.goto('/');
     await page.getByPlaceholder(/at the bakery/i).fill('a walk through Plaka');
     await page.getByRole('button', { name: /^go$/i }).click();
-    await expect(page).toHaveURL(new RegExp(`/${id}/?$`));
+    await expect(page).toHaveURL(ID_URL);
 
     // Go back to home — echo should be in the list
     await page.getByRole('link', { name: 'echolingo' }).click();

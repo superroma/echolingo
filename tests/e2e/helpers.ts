@@ -60,16 +60,21 @@ export function buildEcho(f: EchoFixture) {
   };
 }
 
+/** The client mints the id and PUTs to `/api/echo/{id}`; we echo that id back. */
+function idFromUrl(url: string): string {
+  return decodeURIComponent(new URL(url).pathname.split('/').filter(Boolean).pop() ?? '');
+}
+
 export async function mockCreateEcho(
   page: Page,
   response:
-    | { kind: 'created'; id: string }
+    | { kind: 'created' }
     | { kind: 'rate_limited'; limit: number; used: number; resetAt: string }
     | { kind: 'server_error'; status: number; message: string }
     | { kind: 'network_error' },
 ) {
-  await page.route('**/api/echo', async (route: Route) => {
-    if (route.request().method() !== 'POST') {
+  await page.route('**/api/echo/*', async (route: Route) => {
+    if (route.request().method() !== 'PUT') {
       await route.fallback();
       return;
     }
@@ -77,7 +82,7 @@ export async function mockCreateEcho(
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
-        body: JSON.stringify({ id: response.id, status: 'generating_script' }),
+        body: JSON.stringify({ id: idFromUrl(route.request().url()), status: 'generating_script' }),
       });
       return;
     }
@@ -105,31 +110,51 @@ export async function mockCreateEcho(
   });
 }
 
-export async function mockGetEcho(
-  page: Page,
-  id: string,
-  sequence: Array<EchoFixture | { kind: 'not_found' } | { kind: 'network_error' }>,
-) {
+type GetStep = EchoFixture | { kind: 'not_found' } | { kind: 'network_error' };
+
+async function fulfillGet(route: Route, step: GetStep, id: string): Promise<void> {
+  if ('kind' in step && step.kind === 'not_found') {
+    await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    return;
+  }
+  if ('kind' in step && step.kind === 'network_error') {
+    await route.abort('failed');
+    return;
+  }
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(buildEcho({ ...(step as EchoFixture), id })),
+  });
+}
+
+export async function mockGetEcho(page: Page, id: string, sequence: GetStep[]) {
   let i = 0;
   await page.route(`**/api/echo/${id}`, async (route: Route) => {
     if (route.request().method() !== 'GET') {
       await route.fallback();
       return;
     }
-    const step = sequence[Math.min(i, sequence.length - 1)];
+    const step = sequence[Math.min(i, sequence.length - 1)]!;
     i++;
-    if ('kind' in step && step.kind === 'not_found') {
-      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    await fulfillGet(route, step, id);
+  });
+}
+
+/**
+ * Id-agnostic GET mock for the create flow, where the client mints the id so the
+ * test can't know it up front. Serves `sequence` for any `/api/echo/{id}` GET,
+ * stamping the id parsed from the URL into the response body.
+ */
+export async function mockGetEchoAny(page: Page, sequence: Array<Omit<EchoFixture, 'id'> | { kind: 'not_found' } | { kind: 'network_error' }>) {
+  let i = 0;
+  await page.route('**/api/echo/*', async (route: Route) => {
+    if (route.request().method() !== 'GET') {
+      await route.fallback();
       return;
     }
-    if ('kind' in step && step.kind === 'network_error') {
-      await route.abort('failed');
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(buildEcho(step as EchoFixture)),
-    });
+    const step = sequence[Math.min(i, sequence.length - 1)]!;
+    i++;
+    await fulfillGet(route, step as GetStep, idFromUrl(route.request().url()));
   });
 }
