@@ -1,5 +1,5 @@
 import { test, expect } from './fixture';
-import { mockGetLesson } from './helpers';
+import { mockGetEcho } from './helpers';
 
 /**
  * Bug: on mobile, scrolling the transcript to the end scrolls the whole page and
@@ -33,13 +33,13 @@ test.describe('player panel stays pinned to the viewport', () => {
       gr: `Πρόταση αριθμός ${i} με αρκετό κείμενο ώστε να ξεπεράσει το ύψος της οθόνης`,
       native: `Sentence number ${i} with enough text to overflow the screen height`,
     }));
-    await mockGetLesson(page, 'pinned-1', [
-      { id: 'pinned-1', status: 'ready', topic: 'long lesson', sentences },
+    await mockGetEcho(page, 'pinned-1', [
+      { id: 'pinned-1', status: 'ready', topic: 'long echo', sentences },
     ]);
 
     await page.setViewportSize({ width: 390, height: 720 }); // iPhone-class portrait
     await page.goto('/echo/pinned-1/');
-    await expect(page.getByRole('heading', { name: 'long lesson' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'long echo' })).toBeVisible();
     // The <audio> element renders only in the ready/player state, so waiting for
     // it guarantees the dvh player shell is mounted (no silent shell-missing pass).
     await page.locator('audio').waitFor({ state: 'attached' });

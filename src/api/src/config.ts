@@ -1,4 +1,4 @@
-export const DEFAULT_LESSON_CONTAINER = 'lessons';
+export const DEFAULT_ECHO_CONTAINER = 'echoes';
 export const DEFAULT_AUDIO_CONTAINER = 'audio';
 export const DEFAULT_RATE_LIMIT_CONTAINER = 'rate-limits';
 export const DEFAULT_SCRIPT_GEN_QUEUE = 'script-gen';
@@ -28,7 +28,7 @@ export interface StorageConfig {
   storageConnectionString?: string;
   blobEndpoint?: string;
   queueEndpoint?: string;
-  lessonsContainer: string;
+  echoesContainer: string;
   audioContainer: string;
   rateLimitContainer: string;
   scriptGenQueue: string;
@@ -102,7 +102,7 @@ export function loadConfig(): Config {
     storageConnectionString: useAzureStorage ? undefined : process.env.AzureWebJobsStorage,
     blobEndpoint,
     queueEndpoint,
-    lessonsContainer: process.env.LESSONS_CONTAINER ?? DEFAULT_LESSON_CONTAINER,
+    echoesContainer: process.env.ECHOES_CONTAINER ?? DEFAULT_ECHO_CONTAINER,
     audioContainer: process.env.AUDIO_CONTAINER ?? DEFAULT_AUDIO_CONTAINER,
     rateLimitContainer: process.env.RATE_LIMIT_CONTAINER ?? DEFAULT_RATE_LIMIT_CONTAINER,
     scriptGenQueue: process.env.SCRIPT_GEN_QUEUE ?? DEFAULT_SCRIPT_GEN_QUEUE,

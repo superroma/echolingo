@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   LANG_CODES,
-  LESSON_LENGTHS,
+  ECHO_LENGTHS,
   type LangCode,
-  type LessonLength,
-  type LessonLevel,
-  type LessonStatus,
+  type EchoLength,
+  type EchoLevel,
+  type EchoStatus,
 } from '@echolingo/shared/types';
 
 export interface Echo {
@@ -15,17 +15,17 @@ export interface Echo {
   topic: string;
   targetLang: LangCode;
   nativeLang: LangCode;
-  lengthMin: LessonLength;
-  level: LessonLevel;
+  lengthMin: EchoLength;
+  level: EchoLevel;
   createdAt: string;
-  lastStatus: LessonStatus;
+  lastStatus: EchoStatus;
   error?: string;
 }
 
 export const MAX_ECHOES = 50;
 const STORAGE_KEY = 'echolingo:echoes';
 
-const VALID_STATUSES: LessonStatus[] = [
+const VALID_STATUSES: EchoStatus[] = [
   'generating_script',
   'generating_audio',
   'ready',
@@ -45,12 +45,12 @@ function isEcho(v: unknown): v is Echo {
     typeof o.topic === 'string' &&
     LANG_CODES.includes(o.targetLang as LangCode) &&
     LANG_CODES.includes(o.nativeLang as LangCode) &&
-    LESSON_LENGTHS.includes(o.lengthMin as LessonLength) &&
+    ECHO_LENGTHS.includes(o.lengthMin as EchoLength) &&
     typeof o.level === 'number' &&
     o.level >= 1 &&
     o.level <= 6 &&
     typeof o.createdAt === 'string' &&
-    VALID_STATUSES.includes(o.lastStatus as LessonStatus)
+    VALID_STATUSES.includes(o.lastStatus as EchoStatus)
   );
 }
 

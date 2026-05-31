@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { loadConfig, DEFAULT_LESSON_CONTAINER, DEFAULT_AUDIO_CONTAINER, DEFAULT_SCRIPT_GEN_QUEUE, DEFAULT_TTS_SENTENCE_QUEUE } from '../src/config.js';
+import { loadConfig, DEFAULT_ECHO_CONTAINER, DEFAULT_AUDIO_CONTAINER, DEFAULT_SCRIPT_GEN_QUEUE, DEFAULT_TTS_SENTENCE_QUEUE } from '../src/config.js';
 
 describe('loadConfig', () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
     delete process.env.AzureWebJobsStorage;
-    delete process.env.LESSONS_CONTAINER;
+    delete process.env.ECHOES_CONTAINER;
     delete process.env.AUDIO_CONTAINER;
     delete process.env.SCRIPT_GEN_QUEUE;
     delete process.env.TTS_SENTENCE_QUEUE;
@@ -28,7 +28,7 @@ describe('loadConfig', () => {
   it('uses default container and queue names when env is unset', () => {
     process.env.AzureWebJobsStorage = 'UseDevelopmentStorage=true';
     const cfg = loadConfig();
-    expect(cfg.lessonsContainer).toBe(DEFAULT_LESSON_CONTAINER);
+    expect(cfg.echoesContainer).toBe(DEFAULT_ECHO_CONTAINER);
     expect(cfg.audioContainer).toBe(DEFAULT_AUDIO_CONTAINER);
     expect(cfg.scriptGenQueue).toBe(DEFAULT_SCRIPT_GEN_QUEUE);
     expect(cfg.ttsSentenceQueue).toBe(DEFAULT_TTS_SENTENCE_QUEUE);
@@ -36,12 +36,12 @@ describe('loadConfig', () => {
 
   it('honors env overrides for container and queue names', () => {
     process.env.AzureWebJobsStorage = 'UseDevelopmentStorage=true';
-    process.env.LESSONS_CONTAINER = 'custom-lessons';
+    process.env.ECHOES_CONTAINER = 'custom-echoes';
     process.env.AUDIO_CONTAINER = 'custom-audio';
     process.env.SCRIPT_GEN_QUEUE = 'custom-script-gen';
     process.env.TTS_SENTENCE_QUEUE = 'custom-tts';
     const cfg = loadConfig();
-    expect(cfg.lessonsContainer).toBe('custom-lessons');
+    expect(cfg.echoesContainer).toBe('custom-echoes');
     expect(cfg.audioContainer).toBe('custom-audio');
     expect(cfg.scriptGenQueue).toBe('custom-script-gen');
     expect(cfg.ttsSentenceQueue).toBe('custom-tts');

@@ -4,20 +4,20 @@ import { getContext } from '../context.js';
 
 export async function scriptGenWorker(job: ScriptGenJob): Promise<void> {
   const ctx = getContext();
-  const lesson = await ctx.lessons.get(job.lessonId);
-  if (!lesson) throw new Error(`Lesson ${job.lessonId} not found`);
-  if (lesson.status !== 'generating_script') return;
+  const echo = await ctx.echoes.get(job.echoId);
+  if (!echo) throw new Error(`Echo ${job.echoId} not found`);
+  if (echo.status !== 'generating_script') return;
 
   try {
-    const prompt = buildPrompt(lesson.params);
+    const prompt = buildPrompt(echo.params);
     const raw = await ctx.llm.generateScript(prompt);
     const sentences = parseScript(raw);
     if (sentences.length === 0) {
       throw new Error('empty script: parseScript returned no sentences');
     }
 
-    await ctx.lessons.update(job.lessonId, (l) => ({
-      ...l,
+    await ctx.echoes.update(job.echoId, (e) => ({
+      ...e,
       status: 'generating_audio',
       sentences,
       totalSentences: sentences.length,
@@ -29,26 +29,26 @@ export async function scriptGenWorker(job: ScriptGenJob): Promise<void> {
       sentences.map((s) =>
         ctx.queue.enqueueTtsSentence({
           type: 'ttsSentence',
-          lessonId: job.lessonId,
+          echoId: job.echoId,
           sentenceIndex: s.i,
         }),
       ),
     );
     ctx.telemetry.emit({
-      name: 'lesson.script_ready',
-      properties: { lessonId: job.lessonId, totalSentences: sentences.length },
+      name: 'echo.script_ready',
+      properties: { echoId: job.echoId, totalSentences: sentences.length },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    await ctx.lessons.update(job.lessonId, (l) => ({
-      ...l,
+    await ctx.echoes.update(job.echoId, (e) => ({
+      ...e,
       status: 'failed',
       error: message,
       updatedAt: new Date().toISOString(),
     }));
     ctx.telemetry.emit({
-      name: 'lesson.failed',
-      properties: { lessonId: job.lessonId, stage: 'script_gen', error: message },
+      name: 'echo.failed',
+      properties: { echoId: job.echoId, stage: 'script_gen', error: message },
     });
     throw err;
   }

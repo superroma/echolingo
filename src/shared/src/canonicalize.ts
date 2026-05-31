@@ -1,7 +1,7 @@
 /**
  * Deterministic JSON serialization: object keys sorted recursively and
  * `undefined` values dropped, so equivalent params always produce the same
- * string (and therefore the same lesson id) regardless of key order.
+ * string (and therefore the same echo id) regardless of key order.
  *
  * NOTE: must stay byte-for-byte identical to the API's copy
  * (src/api/src/_shared/canonicalize.ts) — both feed the same SHA-256 id.

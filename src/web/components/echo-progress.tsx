@@ -1,8 +1,8 @@
 'use client';
 
-import { cefr, LANG_NAME, type Lesson } from '@echolingo/shared/types';
+import { cefr, LANG_NAME, type Echo } from '@echolingo/shared/types';
 
-export function EchoProgress({ echo }: { echo: Lesson }) {
+export function EchoProgress({ echo }: { echo: Echo }) {
   const meta = `${LANG_NAME[echo.params.targetLang].toLowerCase()} · ${echo.params.lengthMin} min · ${cefr(
     echo.params.level,
   )}`;

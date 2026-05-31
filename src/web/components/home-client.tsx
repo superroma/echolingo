@@ -6,7 +6,7 @@ import { CreateEchoForm } from './create-echo-form';
 import { EchoesList } from './echoes-list';
 import { InstallPanel } from './install-panel';
 import { useEchoes } from '../hooks/use-echoes';
-import { getLesson } from '../lib/api';
+import { getEcho } from '../lib/api';
 
 export function HomeClient() {
   const { echoes, hydrated, updateEcho, removeEcho } = useEchoes();
@@ -21,14 +21,14 @@ export function HomeClient() {
     let cancelled = false;
     void Promise.all(
       pending.map(async (e) => {
-        const result = await getLesson(e.id);
+        const result = await getEcho(e.id);
         if (cancelled) return;
         if (result.kind === 'found') {
-          if (result.lesson.status !== e.lastStatus) {
-            updateEcho(e.id, { lastStatus: result.lesson.status, error: result.lesson.error });
+          if (result.echo.status !== e.lastStatus) {
+            updateEcho(e.id, { lastStatus: result.echo.status, error: result.echo.error });
           }
         } else if (result.kind === 'not_found') {
-          updateEcho(e.id, { lastStatus: 'failed', error: 'lesson not found' });
+          updateEcho(e.id, { lastStatus: 'failed', error: 'echo not found' });
         }
       }),
     );
@@ -52,12 +52,12 @@ export function HomeClient() {
         {firstRun && (
           <div className="px-2 pb-[18px] pt-1.5 text-center">
             <h1 className="mb-2.5 font-serif text-[clamp(30px,5.5vw,42px)] font-semibold leading-[1.04] tracking-[-0.025em] text-ink">
-              listening lessons,
+              listening echoes,
               <br />
               on demand
             </h1>
             <p className="font-serif text-[17px] italic leading-[1.4] text-ink-soft">
-              name a topic — get a narrated lesson
+              name a topic — get a narrated echo
               <br />
               in seconds. no account, ever.
             </p>

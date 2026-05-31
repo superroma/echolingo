@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { cefr, LANG_NAME, type Lesson } from '@echolingo/shared/types';
+import { cefr, LANG_NAME, type Echo } from '@echolingo/shared/types';
 import { SparkIcon, ArrowRightIcon } from './icons';
 
 /** A visit is "shared" (show conversion affordances) when the echo was NOT
@@ -10,12 +10,12 @@ export function isSharedVisit({ libraryHadId }: { libraryHadId: boolean }): bool
   return !libraryHadId;
 }
 
-export function ShareContextStrip({ echo }: { echo: Lesson }) {
+export function ShareContextStrip({ echo }: { echo: Echo }) {
   const router = useRouter();
   return (
     <div className="mx-[22px] mb-1 mt-3.5 flex flex-col items-start gap-[11px] rounded-[16px] border border-line bg-paper-2 p-4">
       <p className="text-[13.5px] leading-[1.45] text-ink-soft">
-        a <b className="font-semibold capitalize text-ink">{LANG_NAME[echo.params.targetLang]}</b> listening lesson
+        a <b className="font-semibold capitalize text-ink">{LANG_NAME[echo.params.targetLang]}</b> listening echo
         someone shared with you · {echo.params.lengthMin} min · {cefr(echo.params.level)}. press play to listen —
       </p>
       <button
@@ -40,7 +40,7 @@ export function ConversionCard() {
         the same way
       </div>
       <p className="mx-auto mb-[22px] max-w-[30ch] text-[15px] leading-[1.5] text-ink-soft">
-        echolingo turns any topic into a narrated lesson — your languages, your level, ready in seconds. no sign-up
+        echolingo turns any topic into a narrated echo — your languages, your level, ready in seconds. no sign-up
         required.
       </p>
       <button

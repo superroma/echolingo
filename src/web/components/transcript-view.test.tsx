@@ -2,9 +2,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TranscriptView } from './transcript-view.js';
-import type { Lesson } from '@echolingo/shared/types';
+import type { Echo } from '@echolingo/shared/types';
 
-function readyLesson(sentenceCount: number): Lesson {
+function readyEcho(sentenceCount: number): Echo {
   return {
     id: 't',
     status: 'ready',
@@ -32,7 +32,7 @@ function readyLesson(sentenceCount: number): Lesson {
       grDurSec: 1,
       nativeDurSec: 1,
     })),
-  } as Lesson;
+  } as Echo;
 }
 
 // Mirrors the scroll nesting in echo-client.tsx:
@@ -44,7 +44,7 @@ function Player({ current }: { current: number }) {
     <div data-testid="scroller" style={{ overflowY: 'auto' }}>
       <div data-testid="wrapper">
         <TranscriptView
-          lesson={readyLesson(20)}
+          echo={readyEcho(20)}
           currentSentence={current}
           showNative
           onJump={() => {}}

@@ -1,24 +1,24 @@
 import { describe, it, expect } from 'vitest';
 import {
   LANG_CODES,
-  LESSON_LEVELS,
-  LESSON_LENGTHS,
-  LESSON_MODES,
+  ECHO_LEVELS,
+  ECHO_LENGTHS,
+  ECHO_MODES,
   BILINGUAL_ORDERS,
   TTS_ENGINES,
   CEFR_LABEL,
   cefr,
-  isLessonParams,
-  type LessonParams,
+  isEchoParams,
+  type EchoParams,
 } from '../src/types.js';
 
 describe('domain enums', () => {
   it('exposes the four length presets', () => {
-    expect(LESSON_LENGTHS).toEqual([5, 10, 20, 30]);
+    expect(ECHO_LENGTHS).toEqual([5, 10, 20, 30]);
   });
 
   it('exposes the two modes', () => {
-    expect(LESSON_MODES).toEqual(['target_only', 'bilingual']);
+    expect(ECHO_MODES).toEqual(['target_only', 'bilingual']);
   });
 
   it('exposes the two bilingual orders', () => {
@@ -36,7 +36,7 @@ describe('domain enums', () => {
   });
 });
 
-describe('isLessonParams', () => {
+describe('isEchoParams', () => {
   const valid = {
     topic: 'at the bakery',
     targetLang: 'el',
@@ -49,50 +49,50 @@ describe('isLessonParams', () => {
   };
 
   it('accepts a fully-valid object', () => {
-    expect(isLessonParams(valid)).toBe(true);
+    expect(isEchoParams(valid)).toBe(true);
   });
 
   it('rejects missing topic', () => {
-    expect(isLessonParams({ ...valid, topic: '' })).toBe(false);
+    expect(isEchoParams({ ...valid, topic: '' })).toBe(false);
   });
 
   it('rejects unknown length', () => {
-    expect(isLessonParams({ ...valid, lengthMin: 7 })).toBe(false);
+    expect(isEchoParams({ ...valid, lengthMin: 7 })).toBe(false);
   });
 
   it('rejects level outside 1..6', () => {
-    expect(isLessonParams({ ...valid, level: 0 })).toBe(false);
-    expect(isLessonParams({ ...valid, level: 7 })).toBe(false);
+    expect(isEchoParams({ ...valid, level: 0 })).toBe(false);
+    expect(isEchoParams({ ...valid, level: 7 })).toBe(false);
   });
 
   it('rejects unknown mode/order/engine', () => {
-    expect(isLessonParams({ ...valid, mode: 'greek_only' })).toBe(false);
-    expect(isLessonParams({ ...valid, bilingualOrder: 'gr_first' })).toBe(false);
-    expect(isLessonParams({ ...valid, ttsEngine: 'aws' })).toBe(false);
+    expect(isEchoParams({ ...valid, mode: 'greek_only' })).toBe(false);
+    expect(isEchoParams({ ...valid, bilingualOrder: 'gr_first' })).toBe(false);
+    expect(isEchoParams({ ...valid, ttsEngine: 'aws' })).toBe(false);
   });
 
   it('rejects missing targetLang', () => {
     const { targetLang: _t, ...rest } = valid;
-    expect(isLessonParams(rest)).toBe(false);
+    expect(isEchoParams(rest)).toBe(false);
   });
 
   it('rejects unknown targetLang code', () => {
-    expect(isLessonParams({ ...valid, targetLang: 'xx' })).toBe(false);
+    expect(isEchoParams({ ...valid, targetLang: 'xx' })).toBe(false);
   });
 
   it('rejects targetLang === nativeLang', () => {
-    expect(isLessonParams({ ...valid, targetLang: 'en' })).toBe(false);
+    expect(isEchoParams({ ...valid, targetLang: 'en' })).toBe(false);
   });
 
   it('accepts widened native languages beyond en/ru', () => {
-    expect(isLessonParams({ ...valid, nativeLang: 'es' })).toBe(true);
-    expect(isLessonParams({ ...valid, nativeLang: 'ja' })).toBe(true);
+    expect(isEchoParams({ ...valid, nativeLang: 'es' })).toBe(true);
+    expect(isEchoParams({ ...valid, nativeLang: 'ja' })).toBe(true);
   });
 });
 
 describe('CEFR levels', () => {
   it('has six levels 1..6', () => {
-    expect(LESSON_LEVELS).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(ECHO_LEVELS).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it('maps each level to a CEFR band', () => {
@@ -106,8 +106,8 @@ describe('CEFR levels', () => {
     expect(cefr(99 as never)).toBe('C2');
   });
 
-  it('accepts level 6 in isLessonParams', () => {
-    const params: LessonParams = {
+  it('accepts level 6 in isEchoParams', () => {
+    const params: EchoParams = {
       topic: 'at the bakery',
       targetLang: 'el',
       nativeLang: 'en',
@@ -117,6 +117,6 @@ describe('CEFR levels', () => {
       bilingualOrder: 'target_first',
       ttsEngine: 'openai',
     };
-    expect(isLessonParams(params)).toBe(true);
+    expect(isEchoParams(params)).toBe(true);
   });
 });

@@ -9,7 +9,7 @@ test.describe('home page', () => {
     await expect(page.getByLabel('learning')).toBeVisible();
     await expect(page.getByRole('button', { name: /^go$/i })).toBeDisabled();
     // First-run hero stands in for the (hidden) empty echoes list.
-    await expect(page.getByRole('heading', { name: /listening lessons/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /listening echoes/i })).toBeVisible();
   });
 
   test('enables Go once topic is non-empty', async ({ page }) => {

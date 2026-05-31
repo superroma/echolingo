@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
-import { cefr, isLessonParams, LANG_NAME, type Lesson, type LessonParams } from '@echolingo/shared/types';
+import { cefr, isEchoParams, LANG_NAME, type Echo, type EchoParams } from '@echolingo/shared/types';
 import { useEcho } from '../hooks/use-echo';
 import { usePlayer, loadPosition } from '../hooks/use-player';
 import { useEchoes, loadEchoes } from '../hooks/use-echoes';
@@ -17,7 +17,7 @@ import {
   totalDuration,
   chunkAtElapsed,
 } from '../hooks/playlist-math';
-import { createLesson, type CreateLessonResult } from '../lib/api';
+import { createEcho, type CreateEchoResult } from '../lib/api';
 
 export function EchoClient({ id }: { id: string }) {
   return <ExistingEcho id={id} />;
@@ -43,12 +43,12 @@ type CreateState =
 const CREATE_PREFIX = 'echo:create:';
 
 /** Params the home form stashed for an id it linked to but hasn't created yet. */
-function readPendingParams(id: string): LessonParams | null {
+function readPendingParams(id: string): EchoParams | null {
   try {
     const raw = sessionStorage.getItem(CREATE_PREFIX + id);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as unknown;
-    return isLessonParams(parsed) ? parsed : null;
+    return isEchoParams(parsed) ? parsed : null;
   } catch {
     return null;
   }
@@ -70,10 +70,10 @@ function ExistingEcho({ id }: { id: string }) {
   const [showTranslation, setShowTranslation] = useState(true);
 
   // Create-on-arrival: the home form links to /echo/{id} (id is deterministic)
-  // and stashes the params in sessionStorage. If the lesson doesn't exist yet,
+  // and stashes the params in sessionStorage. If the echo doesn't exist yet,
   // POST it once, then bump the poll token so useEcho picks it up. Shared links
-  // carry no stashed params (the lesson already exists), so this is skipped.
-  const [pendingParams] = useState<LessonParams | null>(() =>
+  // carry no stashed params (the echo already exists), so this is skipped.
+  const [pendingParams] = useState<EchoParams | null>(() =>
     typeof window !== 'undefined' ? readPendingParams(id) : null,
   );
   const [creating, setCreating] = useState<CreateState | null>(
@@ -82,12 +82,12 @@ function ExistingEcho({ id }: { id: string }) {
   const createTriedRef = useRef(false);
 
   const runCreate = useCallback(
-    (params: LessonParams) => {
+    (params: EchoParams) => {
       setCreating({ kind: 'creating' });
       void (async () => {
-        let result: CreateLessonResult;
+        let result: CreateEchoResult;
         try {
-          result = await createLesson(params);
+          result = await createEcho(params);
         } catch (e) {
           setCreating({ kind: 'network_error', message: (e as Error).message });
           return;
@@ -99,7 +99,7 @@ function ExistingEcho({ id }: { id: string }) {
             router.replace(`/echo/${result.id}/`);
             return;
           }
-          setReloadToken((t) => t + 1); // re-poll; the lesson now exists
+          setReloadToken((t) => t + 1); // re-poll; the echo now exists
         } else if (result.kind === 'rate_limited') {
           setCreating({ kind: 'rate_limited', limit: result.limit, used: result.used, resetAt: result.resetAt });
         } else {
@@ -116,7 +116,7 @@ function ExistingEcho({ id }: { id: string }) {
     runCreate(pendingParams);
   }, [pendingParams, runCreate]);
 
-  // Drop the transient create-cover once the (re)poll yields the lesson.
+  // Drop the transient create-cover once the (re)poll yields the echo.
   useEffect(() => {
     if (state.kind === 'ok' && creating?.kind === 'creating') setCreating(null);
   }, [state.kind, creating]);
@@ -216,11 +216,11 @@ function ExistingEcho({ id }: { id: string }) {
     if (saved > 0) onSeek(saved);
   }, [playlist.length, id]);
 
-  async function retryFailed(echo: Lesson) {
+  async function retryFailed(echo: Echo) {
     setRetrying({ kind: 'creating' });
-    let result: CreateLessonResult;
+    let result: CreateEchoResult;
     try {
-      result = await createLesson(echo.params);
+      result = await createEcho(echo.params);
     } catch (e) {
       setRetrying({ kind: 'network_error', message: (e as Error).message });
       return;
@@ -365,7 +365,7 @@ function ExistingEcho({ id }: { id: string }) {
         <div className="mx-auto w-full max-w-2xl">
           {shared && <ShareContextStrip echo={echo} />}
           <TranscriptView
-            lesson={echo}
+            echo={echo}
             currentSentence={player.state.currentSentence}
             showNative={bilingual && showTranslation}
             onJump={player.controls.jumpToSentence}
@@ -400,7 +400,7 @@ function PageFrame({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
-function metaLine(params: LessonParams): string {
+function metaLine(params: EchoParams): string {
   return `${LANG_NAME[params.targetLang].toLowerCase()} · ${params.lengthMin} min · ${cefr(params.level)}`;
 }
 

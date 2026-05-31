@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { lessonCreateHandler } from '../src/functions/lesson-create.js';
+import { echoCreateHandler } from '../src/functions/echo-create.js';
 import { setContextForTests, type ApiContext } from '../src/context.js';
 import {
   InMemoryAudioStorage,
-  InMemoryLessonRepository,
+  InMemoryEchoRepository,
   MockLlmEngine,
   MockTtsEngine,
 } from '../src/_shared/index.js';
 import type { HttpRequest } from '@azure/functions';
-import { lessonParams } from './helpers/fixtures.js';
+import { echoParams } from './helpers/fixtures.js';
 
 class CountingRateLimits {
   state = new Map<string, number>();
@@ -38,7 +38,7 @@ function buildContext(limit: number): { ctx: ApiContext; rates: CountingRateLimi
   const ctx: ApiContext = {
     config: {
       storageConnectionString: 'UseDevelopmentStorage=true',
-      lessonsContainer: 'lessons',
+      echoesContainer: 'echoes',
       audioContainer: 'audio',
       rateLimitContainer: 'rate-limits',
       scriptGenQueue: 'script-gen',
@@ -47,7 +47,7 @@ function buildContext(limit: number): { ctx: ApiContext; rates: CountingRateLimi
       ttsEngine: 'mock',
       rateLimitPerDay: limit,
     },
-    lessons: new InMemoryLessonRepository(),
+    echoes: new InMemoryEchoRepository(),
     audio: new InMemoryAudioStorage(),
     queue: queue as unknown as ApiContext['queue'],
     llm: new MockLlmEngine(),
@@ -61,7 +61,7 @@ function buildContext(limit: number): { ctx: ApiContext; rates: CountingRateLimi
 function jsonRequest(body: unknown, ip = '1.2.3.4'): HttpRequest {
   return {
     method: 'POST',
-    url: 'http://localhost/api/lesson',
+    url: 'http://localhost/api/echo',
     headers: new Headers({
       'content-type': 'application/json',
       'x-forwarded-for': ip,
@@ -82,7 +82,7 @@ function jsonRequest(body: unknown, ip = '1.2.3.4'): HttpRequest {
   } as unknown as HttpRequest;
 }
 
-describe('POST /api/lesson rate limiting', () => {
+describe('POST /api/echo rate limiting', () => {
   let ctx: ApiContext;
 
   beforeEach(() => {
@@ -90,10 +90,10 @@ describe('POST /api/lesson rate limiting', () => {
     setContextForTests(ctx);
   });
 
-  it('counts a new lesson against the IP daily quota', async () => {
-    await lessonCreateHandler(jsonRequest(lessonParams({ topic: 'one' })));
-    await lessonCreateHandler(jsonRequest(lessonParams({ topic: 'two' })));
-    const res = await lessonCreateHandler(jsonRequest(lessonParams({ topic: 'three' })));
+  it('counts a new echo against the IP daily quota', async () => {
+    await echoCreateHandler(jsonRequest(echoParams({ topic: 'one' })));
+    await echoCreateHandler(jsonRequest(echoParams({ topic: 'two' })));
+    const res = await echoCreateHandler(jsonRequest(echoParams({ topic: 'three' })));
     expect(res.status).toBe(429);
     const body = JSON.parse(res.body as string);
     expect(body.limit).toBe(2);
@@ -102,26 +102,26 @@ describe('POST /api/lesson rate limiting', () => {
   });
 
   it('cache hits do not consume rate-limit quota', async () => {
-    const params = lessonParams({ topic: 'shared' });
-    const a = await lessonCreateHandler(jsonRequest(params));
+    const params = echoParams({ topic: 'shared' });
+    const a = await echoCreateHandler(jsonRequest(params));
     expect(a.status).toBe(201);
-    const b = await lessonCreateHandler(jsonRequest(params));
+    const b = await echoCreateHandler(jsonRequest(params));
     expect(b.status).toBe(200);
-    const c = await lessonCreateHandler(jsonRequest(lessonParams({ topic: 'fresh' })));
+    const c = await echoCreateHandler(jsonRequest(echoParams({ topic: 'fresh' })));
     expect(c.status).toBe(201);
-    const d = await lessonCreateHandler(jsonRequest(lessonParams({ topic: 'fourth' })));
+    const d = await echoCreateHandler(jsonRequest(echoParams({ topic: 'fourth' })));
     expect(d.status).toBe(429);
   });
 
   it('separates counters per IP', async () => {
-    await lessonCreateHandler(jsonRequest(lessonParams({ topic: 'a' }), '1.1.1.1'));
-    await lessonCreateHandler(jsonRequest(lessonParams({ topic: 'b' }), '1.1.1.1'));
-    const blocked = await lessonCreateHandler(
-      jsonRequest(lessonParams({ topic: 'c' }), '1.1.1.1'),
+    await echoCreateHandler(jsonRequest(echoParams({ topic: 'a' }), '1.1.1.1'));
+    await echoCreateHandler(jsonRequest(echoParams({ topic: 'b' }), '1.1.1.1'));
+    const blocked = await echoCreateHandler(
+      jsonRequest(echoParams({ topic: 'c' }), '1.1.1.1'),
     );
     expect(blocked.status).toBe(429);
-    const otherIp = await lessonCreateHandler(
-      jsonRequest(lessonParams({ topic: 'd' }), '2.2.2.2'),
+    const otherIp = await echoCreateHandler(
+      jsonRequest(echoParams({ topic: 'd' }), '2.2.2.2'),
     );
     expect(otherIp.status).toBe(201);
   });

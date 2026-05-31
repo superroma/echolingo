@@ -3,14 +3,14 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrefs, type FormPrefs } from '../hooks/use-prefs';
-import { lessonId } from '@echolingo/shared';
+import { echoId } from '@echolingo/shared';
 import {
-  LESSON_LENGTHS,
+  ECHO_LENGTHS,
   cefr,
   type LangCode,
-  type LessonLength,
-  type LessonLevel,
-  type LessonParams,
+  type EchoLength,
+  type EchoLevel,
+  type EchoParams,
 } from '@echolingo/shared/types';
 import { LangSelect } from './select';
 import { ArrowRightIcon } from './icons';
@@ -61,7 +61,7 @@ export function CreateEchoForm({ showSuggestions = false }: { showSuggestions?: 
     e.preventDefault();
     const topic = prefs.topic.trim();
     if (!topic) return;
-    const params: LessonParams = {
+    const params: EchoParams = {
       topic,
       targetLang: prefs.targetLang,
       nativeLang: prefs.nativeLang,
@@ -73,9 +73,9 @@ export function CreateEchoForm({ showSuggestions = false }: { showSuggestions?: 
     };
     // The id is deterministic from the params (same hash the API uses), so we
     // can link straight to /echo/{id}. Stash the params so that page can create
-    // the lesson if it doesn't exist yet; shared links omit them (the lesson
+    // the echo if it doesn't exist yet; shared links omit them (the echo
     // already exists server-side by then).
-    const id = await lessonId(params);
+    const id = await echoId(params);
     try {
       sessionStorage.setItem(`echo:create:${id}`, JSON.stringify(params));
     } catch {
@@ -130,11 +130,11 @@ export function CreateEchoForm({ showSuggestions = false }: { showSuggestions?: 
       <div>
         <Label>length</Label>
         <div className="flex gap-[9px]">
-          {LESSON_LENGTHS.map((m) => (
+          {ECHO_LENGTHS.map((m) => (
             <button
               key={m}
               type="button"
-              onClick={() => update('lengthMin', m as LessonLength)}
+              onClick={() => update('lengthMin', m as EchoLength)}
               className={
                 'h-12 flex-1 rounded-pill text-[15px] font-semibold shadow-[var(--shadow-1)] transition ' +
                 (prefs.lengthMin === m
@@ -157,7 +157,7 @@ export function CreateEchoForm({ showSuggestions = false }: { showSuggestions?: 
             max={CEFR_TICKS.length}
             step={1}
             value={prefs.level}
-            onChange={(e) => update('level', Number(e.target.value) as LessonLevel)}
+            onChange={(e) => update('level', Number(e.target.value) as EchoLevel)}
             aria-label="level"
             aria-valuetext={cefr(prefs.level)}
             className="range-accent h-1.5 w-full cursor-pointer appearance-none rounded-full"

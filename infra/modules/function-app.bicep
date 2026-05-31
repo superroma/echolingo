@@ -19,8 +19,8 @@ param storageBlobEndpoint string
 @description('Storage queue endpoint.')
 param storageQueueEndpoint string
 
-@description('Lessons container name.')
-param lessonsContainer string
+@description('Echoes container name.')
+param echoesContainer string
 
 @description('Audio container name.')
 param audioContainer string
@@ -100,7 +100,7 @@ module functionApp 'br/public:avm/res/web/site:0.13.0' = {
       APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsConnectionString
       AzureWebJobsStorage__accountName: storageAccountName
       AzureWebJobsStorage__credential: 'managedidentity'
-      LESSONS_CONTAINER: lessonsContainer
+      ECHOES_CONTAINER: echoesContainer
       AUDIO_CONTAINER: audioContainer
       RATE_LIMIT_CONTAINER: rateLimitContainer
       SCRIPT_GEN_QUEUE: scriptGenQueue

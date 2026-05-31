@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createLesson, getLesson, downloadLesson } from './api.js';
-import type { LessonParams } from '@echolingo/shared/types';
+import { createEcho, getEcho, downloadEcho } from './api.js';
+import type { EchoParams } from '@echolingo/shared/types';
 
-const params: LessonParams = {
+const params: EchoParams = {
   topic: 'at the market',
   targetLang: 'el',
   nativeLang: 'en',
@@ -27,13 +27,13 @@ function jsonResponse(status: number, body: unknown): Response {
   });
 }
 
-describe('createLesson', () => {
-  it('POSTs JSON body to /api/lesson and returns the id', async () => {
+describe('createEcho', () => {
+  it('POSTs JSON body to /api/echo and returns the id', async () => {
     fetchMock.mockResolvedValue(jsonResponse(201, { id: 'abc', status: 'generating_script' }));
-    const result = await createLesson(params);
+    const result = await createEcho(params);
     expect(result).toEqual({ kind: 'created', id: 'abc', status: 'generating_script' });
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe('/api/lesson');
+    expect(url).toBe('/api/echo');
     expect(init.method).toBe('POST');
     expect(init.headers).toEqual({ 'content-type': 'application/json' });
     expect(JSON.parse(init.body)).toEqual(params);
@@ -41,7 +41,7 @@ describe('createLesson', () => {
 
   it('returns kind=existing on 200', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, { id: 'abc', status: 'ready' }));
-    const result = await createLesson(params);
+    const result = await createEcho(params);
     expect(result).toEqual({ kind: 'existing', id: 'abc', status: 'ready' });
   });
 
@@ -49,7 +49,7 @@ describe('createLesson', () => {
     fetchMock.mockResolvedValue(
       jsonResponse(429, { limit: 20, used: 20, resetAt: '2026-05-20T00:00:00Z' }),
     );
-    const result = await createLesson(params);
+    const result = await createEcho(params);
     expect(result).toEqual({
       kind: 'rate_limited',
       limit: 20,
@@ -59,14 +59,14 @@ describe('createLesson', () => {
   });
 
   it('returns kind=error on 400/500', async () => {
-    fetchMock.mockResolvedValue(jsonResponse(400, { error: 'invalid LessonParams' }));
-    const result = await createLesson(params);
-    expect(result).toEqual({ kind: 'error', status: 400, message: 'invalid LessonParams' });
+    fetchMock.mockResolvedValue(jsonResponse(400, { error: 'invalid EchoParams' }));
+    const result = await createEcho(params);
+    expect(result).toEqual({ kind: 'error', status: 400, message: 'invalid EchoParams' });
   });
 });
 
-describe('getLesson', () => {
-  it('GETs /api/lesson/{id} and returns the lesson', async () => {
+describe('getEcho', () => {
+  it('GETs /api/echo/{id} and returns the echo', async () => {
     fetchMock.mockResolvedValue(
       jsonResponse(200, {
         id: 'abc',
@@ -79,34 +79,34 @@ describe('getLesson', () => {
         updatedAt: 'x',
       }),
     );
-    const result = await getLesson('abc');
+    const result = await getEcho('abc');
     expect(result.kind).toBe('found');
     if (result.kind === 'found') {
-      expect(result.lesson.id).toBe('abc');
+      expect(result.echo.id).toBe('abc');
     }
-    expect(fetchMock.mock.calls[0]![0]).toBe('/api/lesson/abc');
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/echo/abc');
   });
 
   it('returns kind=not_found on 404', async () => {
-    fetchMock.mockResolvedValue(jsonResponse(404, { error: 'lesson not found' }));
-    expect(await getLesson('missing')).toEqual({ kind: 'not_found' });
+    fetchMock.mockResolvedValue(jsonResponse(404, { error: 'echo not found' }));
+    expect(await getEcho('missing')).toEqual({ kind: 'not_found' });
   });
 });
 
-describe('downloadLesson', () => {
+describe('downloadEcho', () => {
   it('POSTs and returns the url on 200', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, { url: 'https://s/x/full.mp3' }));
-    const result = await downloadLesson('abc');
+    const result = await downloadEcho('abc');
     expect(result).toEqual({ kind: 'ready', url: 'https://s/x/full.mp3' });
   });
 
   it('returns kind=not_ready on 409', async () => {
     fetchMock.mockResolvedValue(
-      jsonResponse(409, { error: 'lesson is generating_audio, not ready' }),
+      jsonResponse(409, { error: 'echo is generating_audio, not ready' }),
     );
-    expect(await downloadLesson('abc')).toEqual({
+    expect(await downloadEcho('abc')).toEqual({
       kind: 'not_ready',
-      message: 'lesson is generating_audio, not ready',
+      message: 'echo is generating_audio, not ready',
     });
   });
 });

@@ -48,7 +48,7 @@ export function Scrubber({
     <div className="mb-[11px] flex items-center gap-3">
       <div
         role="slider"
-        aria-label="Lesson progress"
+        aria-label="Echo progress"
         aria-valuemin={0}
         aria-valuemax={Math.round(safeTotal)}
         aria-valuenow={Math.round(elapsedSec)}

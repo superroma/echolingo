@@ -1,11 +1,11 @@
 export interface ScriptGenJob {
   type: 'scriptGen';
-  lessonId: string;
+  echoId: string;
 }
 
 export interface TtsSentenceJob {
   type: 'ttsSentence';
-  lessonId: string;
+  echoId: string;
   sentenceIndex: number;
 }
 

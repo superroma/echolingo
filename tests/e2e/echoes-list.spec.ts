@@ -1,5 +1,5 @@
 import { test, expect } from './fixture';
-import { mockGetLesson } from './helpers';
+import { mockGetEcho } from './helpers';
 
 const seedEchoes = [
   {
@@ -31,7 +31,7 @@ test.describe('echoes list', () => {
     }, seedEchoes);
 
     // Mock the on-mount refresh for the pending echo to flip it to ready
-    await mockGetLesson(page, 'e-b', [
+    await mockGetEcho(page, 'e-b', [
       {
         id: 'e-b',
         status: 'ready',
@@ -55,7 +55,7 @@ test.describe('echoes list', () => {
     await page.addInitScript((echoes) => {
       window.localStorage.setItem('echolingo:echoes', JSON.stringify(echoes));
     }, seedEchoes);
-    await mockGetLesson(page, 'e-b', [{ id: 'e-b', status: 'ready', topic: 'pending topic' }]);
+    await mockGetEcho(page, 'e-b', [{ id: 'e-b', status: 'ready', topic: 'pending topic' }]);
 
     page.on('dialog', (d) => void d.accept());
 
@@ -73,8 +73,8 @@ test.describe('echoes list', () => {
     await page.addInitScript((echoes) => {
       window.localStorage.setItem('echolingo:echoes', JSON.stringify(echoes));
     }, seedEchoes);
-    await mockGetLesson(page, 'e-a', [{ id: 'e-a', status: 'ready', topic: 'bakery topic' }]);
-    await mockGetLesson(page, 'e-b', [{ id: 'e-b', status: 'ready', topic: 'pending topic' }]);
+    await mockGetEcho(page, 'e-a', [{ id: 'e-a', status: 'ready', topic: 'bakery topic' }]);
+    await mockGetEcho(page, 'e-b', [{ id: 'e-b', status: 'ready', topic: 'pending topic' }]);
 
     await page.goto('/');
     await page.getByText('bakery topic').click();

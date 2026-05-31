@@ -1,4 +1,4 @@
-import type { Lesson, LessonParams } from '@echolingo/shared/types';
+import type { Echo, EchoParams } from '@echolingo/shared/types';
 
 // All API calls use relative /api/* paths — never the Function App hostname
 // directly. Locally, next.config.mjs rewrites /api/* to the Functions host
@@ -6,18 +6,18 @@ import type { Lesson, LessonParams } from '@echolingo/shared/types';
 // /api/* to the Function App. Same-origin everywhere, so no CORS needed.
 const API_BASE_URL = '';
 
-export type CreateLessonResult =
+export type CreateEchoResult =
   | { kind: 'created'; id: string; status: string }
   | { kind: 'existing'; id: string; status: string }
   | { kind: 'rate_limited'; limit: number; used: number; resetAt: string }
   | { kind: 'error'; status: number; message: string };
 
-export type GetLessonResult =
-  | { kind: 'found'; lesson: Lesson }
+export type GetEchoResult =
+  | { kind: 'found'; echo: Echo }
   | { kind: 'not_found' }
   | { kind: 'error'; status: number; message: string };
 
-export type DownloadLessonResult =
+export type DownloadEchoResult =
   | { kind: 'ready'; url: string }
   | { kind: 'not_ready'; message: string }
   | { kind: 'error'; status: number; message: string };
@@ -30,8 +30,8 @@ async function readJson(res: Response): Promise<Record<string, unknown>> {
   }
 }
 
-export async function createLesson(params: LessonParams): Promise<CreateLessonResult> {
-  const res = await fetch(`${API_BASE_URL}/api/lesson`, {
+export async function createEcho(params: EchoParams): Promise<CreateEchoResult> {
+  const res = await fetch(`${API_BASE_URL}/api/echo`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(params),
@@ -58,12 +58,12 @@ export async function createLesson(params: LessonParams): Promise<CreateLessonRe
   };
 }
 
-export async function getLesson(id: string): Promise<GetLessonResult> {
-  const res = await fetch(`${API_BASE_URL}/api/lesson/${encodeURIComponent(id)}`);
+export async function getEcho(id: string): Promise<GetEchoResult> {
+  const res = await fetch(`${API_BASE_URL}/api/echo/${encodeURIComponent(id)}`);
   if (res.status === 404) return { kind: 'not_found' };
   const body = await readJson(res);
   if (res.status === 200) {
-    return { kind: 'found', lesson: body as unknown as Lesson };
+    return { kind: 'found', echo: body as unknown as Echo };
   }
   return {
     kind: 'error',
@@ -72,14 +72,14 @@ export async function getLesson(id: string): Promise<GetLessonResult> {
   };
 }
 
-export async function downloadLesson(id: string): Promise<DownloadLessonResult> {
-  const res = await fetch(`${API_BASE_URL}/api/lesson/${encodeURIComponent(id)}/download`, { method: 'POST' });
+export async function downloadEcho(id: string): Promise<DownloadEchoResult> {
+  const res = await fetch(`${API_BASE_URL}/api/echo/${encodeURIComponent(id)}/download`, { method: 'POST' });
   const body = await readJson(res);
   if (res.status === 200) {
     return { kind: 'ready', url: String(body.url) };
   }
   if (res.status === 409) {
-    return { kind: 'not_ready', message: String(body.error ?? 'lesson not ready') };
+    return { kind: 'not_ready', message: String(body.error ?? 'echo not ready') };
   }
   return {
     kind: 'error',

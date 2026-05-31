@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { decidePoll, MAX_CONSECUTIVE_ERRORS } from './use-echo.js';
-import type { Lesson } from '@echolingo/shared/types';
+import type { Echo } from '@echolingo/shared/types';
 
-function lesson(status: Lesson['status']): Lesson {
+function echo(status: Echo['status']): Echo {
   return {
     id: 'x',
     params: {
@@ -26,13 +26,13 @@ function lesson(status: Lesson['status']): Lesson {
 
 describe('decidePoll', () => {
   it('keeps polling while generating', () => {
-    const d = decidePoll({ kind: 'found', lesson: lesson('generating_audio') }, 0);
+    const d = decidePoll({ kind: 'found', echo: echo('generating_audio') }, 0);
     expect(d.continuePolling).toBe(true);
-    expect(d.state).toEqual({ kind: 'ok', echo: lesson('generating_audio') });
+    expect(d.state).toEqual({ kind: 'ok', echo: echo('generating_audio') });
   });
 
-  it('stops once the lesson is ready', () => {
-    const d = decidePoll({ kind: 'found', lesson: lesson('ready') }, 3);
+  it('stops once the echo is ready', () => {
+    const d = decidePoll({ kind: 'found', echo: echo('ready') }, 3);
     expect(d.continuePolling).toBe(false);
     expect(d.state?.kind).toBe('ok');
     expect(d.consecutiveErrors).toBe(0); // a success resets the failure streak
@@ -49,9 +49,9 @@ describe('decidePoll', () => {
     // simulate: error (streak 1) -> keep polling -> ready -> stop
     const afterError = decidePoll({ kind: 'error', status: 503, message: 'cold' }, 0);
     expect(afterError.continuePolling).toBe(true);
-    const afterReady = decidePoll({ kind: 'found', lesson: lesson('ready') }, afterError.consecutiveErrors);
+    const afterReady = decidePoll({ kind: 'found', echo: echo('ready') }, afterError.consecutiveErrors);
     expect(afterReady.continuePolling).toBe(false);
-    expect(afterReady.state).toEqual({ kind: 'ok', echo: lesson('ready') });
+    expect(afterReady.state).toEqual({ kind: 'ok', echo: echo('ready') });
   });
 
   it('surfaces an error only after sustained consecutive failures', () => {

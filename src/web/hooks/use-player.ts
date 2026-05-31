@@ -181,7 +181,7 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string): {
 
   // Persist playback position so reopening an echo resumes where it left off.
   // Depend on playlist.length too: the <audio> element mounts only once the
-  // lesson is ready (loading -> ready), so this must re-run when the playlist
+  // echo is ready (loading -> ready), so this must re-run when the playlist
   // fills (0 -> N) to bind the listener to the now-present element. Without it,
   // the effect runs once with a null ref, never rebinds, and no position is ever
   // saved — which made every echo show as "new" forever.
@@ -207,7 +207,7 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string): {
     ms.metadata = new MediaMetadata({
       title: `Sentence ${entry.sentenceIndex + 1}`,
       artist: 'Echolingo',
-      album: 'Greek lesson',
+      album: 'Echolingo',
     });
     ms.setActionHandler('play', () => play());
     ms.setActionHandler('pause', () => pause());

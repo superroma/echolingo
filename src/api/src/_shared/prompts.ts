@@ -1,8 +1,8 @@
-import { LANG_NAME, type LessonParams, type LessonLevel } from './types.js';
+import { LANG_NAME, type EchoParams, type EchoLevel } from './types.js';
 
 const WORDS_PER_MINUTE = 130;
 
-const LEVEL_DESCRIPTOR: Record<LessonLevel, string> = {
+const LEVEL_DESCRIPTOR: Record<EchoLevel, string> = {
   1: 'CEFR A1 (beginner — very simple high-frequency vocabulary, short present-tense sentences)',
   2: 'CEFR A2 (elementary — common everyday vocabulary, simple past/present, short sentences)',
   3: 'CEFR B1 (intermediate — everyday vocabulary, common tenses, natural sentence length)',
@@ -16,14 +16,14 @@ export interface BuiltPrompt {
   user: string;
 }
 
-export function buildPrompt(params: LessonParams): BuiltPrompt {
+export function buildPrompt(params: EchoParams): BuiltPrompt {
   const targetWords = Math.round(params.lengthMin * WORDS_PER_MINUTE);
   const targetName = LANG_NAME[params.targetLang];
   const nativeName = LANG_NAME[params.nativeLang];
   const level = LEVEL_DESCRIPTOR[params.level];
 
   const system =
-    `You are a ${targetName} language tutor producing bilingual listening lessons. ` +
+    `You are a ${targetName} language tutor producing bilingual listening echoes. ` +
     `You write idiomatic ${targetName} and provide accurate ${nativeName} translations.`;
 
   const user = [

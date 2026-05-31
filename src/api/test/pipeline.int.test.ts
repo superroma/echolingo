@@ -2,24 +2,24 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import {
   MockLlmEngine,
   MockTtsEngine,
-  lessonId,
+  echoId,
 } from '../src/_shared/index.js';
-import { BlobLessonRepository } from '../src/storage/blob-lesson-repository.js';
+import { BlobEchoRepository } from '../src/storage/blob-echo-repository.js';
 import { BlobAudioStorage } from '../src/storage/blob-audio-storage.js';
 import { BlobRateLimitStore } from '../src/storage/blob-rate-limit-store.js';
 import { QueueClient } from '../src/queue/queue-client.js';
 import { setContextForTests, type ApiContext } from '../src/context.js';
-import { lessonCreateHandler } from '../src/functions/lesson-create.js';
-import { lessonGetHandler } from '../src/functions/lesson-get.js';
+import { echoCreateHandler } from '../src/functions/echo-create.js';
+import { echoGetHandler } from '../src/functions/echo-get.js';
 import { scriptGenWorker } from '../src/functions/worker-script-gen.js';
 import { ttsSentenceWorker } from '../src/functions/worker-tts-sentence.js';
 import { AZURITE_CONNECTION_STRING, isAzuriteReachable } from './helpers/azurite.js';
 import { resetContainer, resetQueue } from './helpers/containers.js';
-import { lessonParams } from './helpers/fixtures.js';
+import { echoParams } from './helpers/fixtures.js';
 import type { HttpRequest } from '@azure/functions';
 import { QueueServiceClient } from '@azure/storage-queue';
 
-const LESSONS = 'lessons-it-15';
+const ECHOES = 'echoes-it-15';
 const AUDIO = 'audio-it-15';
 const SCRIPT_Q = 'script-gen-it-15';
 const TTS_Q = 'tts-sentence-it-15';
@@ -29,7 +29,7 @@ const CANNED = ['Καλημέρα.||Good morning.', 'Γεια σου.||Hello.'].
 function postRequest(body: unknown): HttpRequest {
   return {
     method: 'POST',
-    url: 'http://localhost/api/lesson',
+    url: 'http://localhost/api/echo',
     headers: new Headers({ 'content-type': 'application/json' }),
     query: new URLSearchParams(),
     params: {},
@@ -50,7 +50,7 @@ function postRequest(body: unknown): HttpRequest {
 function getRequest(id: string): HttpRequest {
   return {
     method: 'GET',
-    url: `http://localhost/api/lesson/${id}`,
+    url: `http://localhost/api/echo/${id}`,
     headers: new Headers(),
     query: new URLSearchParams(),
     params: { id },
@@ -93,7 +93,7 @@ describe('pipeline end-to-end (integration)', () => {
   beforeEach(async () => {
     if (!connStr) return;
     await Promise.all([
-      resetContainer(connStr, LESSONS),
+      resetContainer(connStr, ECHOES),
       resetContainer(connStr, AUDIO),
       resetContainer(connStr, 'rate-limits-it-15'),
       resetQueue(connStr, SCRIPT_Q),
@@ -102,7 +102,7 @@ describe('pipeline end-to-end (integration)', () => {
     ctx = {
       config: {
         storageConnectionString: connStr,
-        lessonsContainer: LESSONS,
+        echoesContainer: ECHOES,
         audioContainer: AUDIO,
         rateLimitContainer: 'rate-limits',
         scriptGenQueue: SCRIPT_Q,
@@ -111,7 +111,7 @@ describe('pipeline end-to-end (integration)', () => {
         ttsEngine: 'mock' as const,
         rateLimitPerDay: 1000,
       },
-      lessons: new BlobLessonRepository(connStr, LESSONS),
+      echoes: new BlobEchoRepository(connStr, ECHOES),
       audio: new BlobAudioStorage(connStr, AUDIO),
       queue: new QueueClient(connStr, SCRIPT_Q, TTS_Q),
       llm: new MockLlmEngine({ script: CANNED }),
@@ -122,25 +122,25 @@ describe('pipeline end-to-end (integration)', () => {
     setContextForTests(ctx);
   });
 
-  it('POST → workers → GET produces a ready lesson with audio URLs', async (testCtx) => {
+  it('POST → workers → GET produces a ready echo with audio URLs', async (testCtx) => {
     if (!connStr) testCtx.skip();
-    const params = lessonParams();
-    const createRes = await lessonCreateHandler(postRequest(params));
+    const params = echoParams();
+    const createRes = await echoCreateHandler(postRequest(params));
     expect(createRes.status).toBe(201);
     const { id } = JSON.parse(createRes.body as string);
-    expect(id).toBe(lessonId(params));
+    expect(id).toBe(echoId(params));
 
     const scriptJobs = await drain(connStr!, SCRIPT_Q);
-    expect(scriptJobs).toEqual([{ type: 'scriptGen', lessonId: id }]);
-    await scriptGenWorker({ type: 'scriptGen', lessonId: id });
+    expect(scriptJobs).toEqual([{ type: 'scriptGen', echoId: id }]);
+    await scriptGenWorker({ type: 'scriptGen', echoId: id });
 
     const ttsJobs = await drain(connStr!, TTS_Q);
     expect(ttsJobs).toHaveLength(2);
-    for (const job of ttsJobs as Array<{ type: string; lessonId: string; sentenceIndex: number }>) {
-      await ttsSentenceWorker({ type: 'ttsSentence', lessonId: job.lessonId, sentenceIndex: job.sentenceIndex });
+    for (const job of ttsJobs as Array<{ type: string; echoId: string; sentenceIndex: number }>) {
+      await ttsSentenceWorker({ type: 'ttsSentence', echoId: job.echoId, sentenceIndex: job.sentenceIndex });
     }
 
-    const getRes = await lessonGetHandler(getRequest(id));
+    const getRes = await echoGetHandler(getRequest(id));
     expect(getRes.status).toBe(200);
     const body = JSON.parse(getRes.body as string);
     expect(body.status).toBe('ready');

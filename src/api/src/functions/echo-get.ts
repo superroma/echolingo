@@ -1,13 +1,13 @@
 import { app, type HttpRequest, type HttpResponseInit } from '@azure/functions';
 import { getContext } from '../context.js';
 
-export async function lessonGetHandler(req: HttpRequest): Promise<HttpResponseInit> {
+export async function echoGetHandler(req: HttpRequest): Promise<HttpResponseInit> {
   const id = req.params.id;
   if (!id) return json(400, { error: 'missing id' });
   const ctx = getContext();
-  const lesson = await ctx.lessons.get(id);
-  if (!lesson) return json(404, { error: 'lesson not found' });
-  return json(200, lesson);
+  const echo = await ctx.echoes.get(id);
+  if (!echo) return json(404, { error: 'echo not found' });
+  return json(200, echo);
 }
 
 function json(status: number, body: unknown): HttpResponseInit {
@@ -18,9 +18,9 @@ function json(status: number, body: unknown): HttpResponseInit {
   };
 }
 
-app.http('lessonGet', {
-  route: 'lesson/{id}',
+app.http('echoGet', {
+  route: 'echo/{id}',
   methods: ['GET'],
   authLevel: 'anonymous',
-  handler: lessonGetHandler,
+  handler: echoGetHandler,
 });

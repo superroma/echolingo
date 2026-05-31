@@ -33,7 +33,7 @@ module storage 'br/public:avm/res/storage/storage-account:0.14.3' = {
       deleteRetentionPolicyEnabled: false
       containerDeleteRetentionPolicyEnabled: false
       containers: [
-        { name: 'lessons' }
+        { name: 'echoes' }
         { name: 'audio', publicAccess: 'Blob' }
         { name: 'rate-limits' }
         { name: 'deploymentpackage' }
@@ -52,7 +52,7 @@ output storageAccountName string = storage.outputs.name
 output storageAccountResourceId string = storage.outputs.resourceId
 output storageBlobEndpoint string = 'https://${storage.outputs.name}.blob.${environment().suffixes.storage}'
 output storageQueueEndpoint string = 'https://${storage.outputs.name}.queue.${environment().suffixes.storage}'
-output lessonsContainer string = 'lessons'
+output echoesContainer string = 'echoes'
 output audioContainer string = 'audio'
 output rateLimitContainer string = 'rate-limits'
 output scriptGenQueue string = 'script-gen'

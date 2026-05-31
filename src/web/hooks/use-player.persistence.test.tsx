@@ -9,7 +9,7 @@ const PLAYLIST: PlaylistEntry[] = [
   { url: 'blob:chunk-0', sentenceIndex: 0, lang: 'target', kind: 'sentence' },
 ];
 
-// Mirrors echo-client.tsx: the <audio> element is rendered only once the lesson
+// Mirrors echo-client.tsx: the <audio> element is rendered only once the echo
 // is `ready`. Before that, usePlayer runs with an empty playlist and no audio.
 function Harness({ id, ready }: { id: string; ready: boolean }) {
   const player = usePlayer(ready ? PLAYLIST : [], id);

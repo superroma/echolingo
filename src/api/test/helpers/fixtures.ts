@@ -1,6 +1,6 @@
-import type { LessonParams } from '../../src/_shared/index.js';
+import type { EchoParams } from '../../src/_shared/index.js';
 
-export function lessonParams(overrides: Partial<LessonParams> = {}): LessonParams {
+export function echoParams(overrides: Partial<EchoParams> = {}): EchoParams {
   return {
     topic: 'at the bakery',
     targetLang: 'el',

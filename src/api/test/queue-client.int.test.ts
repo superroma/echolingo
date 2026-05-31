@@ -32,17 +32,17 @@ describe('QueueClient (integration)', () => {
   it('enqueues a script-gen job in base64-JSON', async (ctx) => {
     if (!connStr) ctx.skip();
     const client = new QueueClient(connStr!, SCRIPT_GEN_Q, TTS_SENTENCE_Q);
-    await client.enqueueScriptGen({ type: 'scriptGen', lessonId: 'abc' });
-    expect(await readOne(connStr!, SCRIPT_GEN_Q)).toEqual({ type: 'scriptGen', lessonId: 'abc' });
+    await client.enqueueScriptGen({ type: 'scriptGen', echoId: 'abc' });
+    expect(await readOne(connStr!, SCRIPT_GEN_Q)).toEqual({ type: 'scriptGen', echoId: 'abc' });
   });
 
   it('enqueues a tts-sentence job', async (ctx) => {
     if (!connStr) ctx.skip();
     const client = new QueueClient(connStr!, SCRIPT_GEN_Q, TTS_SENTENCE_Q);
-    await client.enqueueTtsSentence({ type: 'ttsSentence', lessonId: 'abc', sentenceIndex: 7 });
+    await client.enqueueTtsSentence({ type: 'ttsSentence', echoId: 'abc', sentenceIndex: 7 });
     expect(await readOne(connStr!, TTS_SENTENCE_Q)).toEqual({
       type: 'ttsSentence',
-      lessonId: 'abc',
+      echoId: 'abc',
       sentenceIndex: 7,
     });
   });

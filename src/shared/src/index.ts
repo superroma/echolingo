@@ -1,2 +1,2 @@
 export * from './types.js';
-export * from './lesson-id.js';
+export * from './echo-id.js';

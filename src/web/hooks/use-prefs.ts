@@ -2,19 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  LESSON_LENGTHS,
+  ECHO_LENGTHS,
   LANG_CODES,
   type LangCode,
-  type LessonLength,
-  type LessonLevel,
+  type EchoLength,
+  type EchoLevel,
 } from '@echolingo/shared/types';
 
 export interface FormPrefs {
   topic: string;
   targetLang: LangCode;
   nativeLang: LangCode;
-  lengthMin: LessonLength;
-  level: LessonLevel;
+  lengthMin: EchoLength;
+  level: EchoLevel;
 }
 
 export const DEFAULT_PREFS: FormPrefs = {
@@ -54,12 +54,12 @@ export function loadPrefs(storage: PrefsStorage): FormPrefs {
     topic: DEFAULT_PREFS.topic,
     targetLang,
     nativeLang,
-    lengthMin: LESSON_LENGTHS.includes(parsed.lengthMin as LessonLength)
-      ? (parsed.lengthMin as LessonLength)
+    lengthMin: ECHO_LENGTHS.includes(parsed.lengthMin as EchoLength)
+      ? (parsed.lengthMin as EchoLength)
       : DEFAULT_PREFS.lengthMin,
     level:
       typeof parsed.level === 'number' && parsed.level >= 1 && parsed.level <= 6
-        ? (parsed.level as LessonLevel)
+        ? (parsed.level as EchoLevel)
         : DEFAULT_PREFS.level,
   };
 }

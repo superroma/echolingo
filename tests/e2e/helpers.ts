@@ -1,6 +1,6 @@
 import type { Page, Route } from '@playwright/test';
 
-export interface LessonFixture {
+export interface EchoFixture {
   id: string;
   status: 'generating_script' | 'generating_audio' | 'ready' | 'failed';
   topic?: string;
@@ -21,7 +21,7 @@ export interface LessonFixture {
   error?: string;
 }
 
-export function buildLesson(f: LessonFixture) {
+export function buildEcho(f: EchoFixture) {
   return {
     id: f.id,
     params: {
@@ -60,7 +60,7 @@ export function buildLesson(f: LessonFixture) {
   };
 }
 
-export async function mockCreateLesson(
+export async function mockCreateEcho(
   page: Page,
   response:
     | { kind: 'created'; id: string }
@@ -68,7 +68,7 @@ export async function mockCreateLesson(
     | { kind: 'server_error'; status: number; message: string }
     | { kind: 'network_error' },
 ) {
-  await page.route('**/api/lesson', async (route: Route) => {
+  await page.route('**/api/echo', async (route: Route) => {
     if (route.request().method() !== 'POST') {
       await route.fallback();
       return;
@@ -105,13 +105,13 @@ export async function mockCreateLesson(
   });
 }
 
-export async function mockGetLesson(
+export async function mockGetEcho(
   page: Page,
   id: string,
-  sequence: Array<LessonFixture | { kind: 'not_found' } | { kind: 'network_error' }>,
+  sequence: Array<EchoFixture | { kind: 'not_found' } | { kind: 'network_error' }>,
 ) {
   let i = 0;
-  await page.route(`**/api/lesson/${id}`, async (route: Route) => {
+  await page.route(`**/api/echo/${id}`, async (route: Route) => {
     if (route.request().method() !== 'GET') {
       await route.fallback();
       return;
@@ -129,7 +129,7 @@ export async function mockGetLesson(
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(buildLesson(step as LessonFixture)),
+      body: JSON.stringify(buildEcho(step as EchoFixture)),
     });
   });
 }

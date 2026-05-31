@@ -1,5 +1,5 @@
 import type { AudioLang } from './storage/audio-storage.js';
-import type { Lesson } from './types.js';
+import type { Echo } from './types.js';
 
 export interface PlaylistEntry {
   sentenceIndex: number;
@@ -8,12 +8,12 @@ export interface PlaylistEntry {
   durationSec: number;
 }
 
-export function buildPlaylist(lesson: Lesson): PlaylistEntry[] {
+export function buildPlaylist(echo: Echo): PlaylistEntry[] {
   const out: PlaylistEntry[] = [];
-  const mode = lesson.params.mode;
-  const order = lesson.params.bilingualOrder;
+  const mode = echo.params.mode;
+  const order = echo.params.bilingualOrder;
 
-  for (const s of lesson.sentences) {
+  for (const s of echo.sentences) {
     if (s.status !== 'ready') continue;
 
     const grEntry: PlaylistEntry | null = s.grUrl

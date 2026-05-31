@@ -3,22 +3,22 @@ import {
   MockLlmEngine,
   MockTtsEngine,
 } from '../src/_shared/index.js';
-import { BlobLessonRepository } from '../src/storage/blob-lesson-repository.js';
+import { BlobEchoRepository } from '../src/storage/blob-echo-repository.js';
 import { BlobAudioStorage } from '../src/storage/blob-audio-storage.js';
 import { QueueClient } from '../src/queue/queue-client.js';
 import { setContextForTests, type ApiContext } from '../src/context.js';
-import { lessonCreateHandler } from '../src/functions/lesson-create.js';
-import { lessonGetHandler } from '../src/functions/lesson-get.js';
-import { lessonDownloadHandler } from '../src/functions/lesson-download.js';
+import { echoCreateHandler } from '../src/functions/echo-create.js';
+import { echoGetHandler } from '../src/functions/echo-get.js';
+import { echoDownloadHandler } from '../src/functions/echo-download.js';
 import { scriptGenWorker } from '../src/functions/worker-script-gen.js';
 import { ttsSentenceWorker } from '../src/functions/worker-tts-sentence.js';
 import { AZURITE_CONNECTION_STRING, isAzuriteReachable } from './helpers/azurite.js';
 import { resetContainer, resetQueue } from './helpers/containers.js';
-import { lessonParams } from './helpers/fixtures.js';
+import { echoParams } from './helpers/fixtures.js';
 import type { HttpRequest } from '@azure/functions';
 import { BlobRateLimitStore } from '../src/storage/blob-rate-limit-store.js';
 
-const LESSONS = 'lessons-download-it';
+const ECHOES = 'echoes-download-it';
 const AUDIO = 'audio-download-it';
 const SCRIPT_Q = 'script-gen-download-it';
 const TTS_Q = 'tts-sentence-download-it';
@@ -27,7 +27,7 @@ const RATES = 'rate-limits-download-it';
 function postRequest(body: unknown): HttpRequest {
   return {
     method: 'POST',
-    url: 'http://localhost/api/lesson',
+    url: 'http://localhost/api/echo',
     headers: new Headers({ 'content-type': 'application/json', 'x-forwarded-for': '1.1.1.1' }),
     query: new URLSearchParams(),
     params: {},
@@ -46,7 +46,7 @@ function postRequest(body: unknown): HttpRequest {
 function downloadRequest(id: string): HttpRequest {
   return {
     method: 'POST',
-    url: `http://localhost/api/lesson/${id}/download`,
+    url: `http://localhost/api/echo/${id}/download`,
     headers: new Headers(),
     query: new URLSearchParams(),
     params: { id },
@@ -62,7 +62,7 @@ function downloadRequest(id: string): HttpRequest {
   } as unknown as HttpRequest;
 }
 
-describe('POST /api/lesson/{id}/download (integration)', () => {
+describe('POST /api/echo/{id}/download (integration)', () => {
   let connStr: string | null = null;
 
   beforeAll(async () => {
@@ -72,7 +72,7 @@ describe('POST /api/lesson/{id}/download (integration)', () => {
   beforeEach(async () => {
     if (!connStr) return;
     await Promise.all([
-      resetContainer(connStr, LESSONS),
+      resetContainer(connStr, ECHOES),
       resetContainer(connStr, AUDIO),
       resetContainer(connStr, RATES),
       resetQueue(connStr, SCRIPT_Q),
@@ -81,7 +81,7 @@ describe('POST /api/lesson/{id}/download (integration)', () => {
     const ctx: ApiContext = {
       config: {
         storageConnectionString: connStr,
-        lessonsContainer: LESSONS,
+        echoesContainer: ECHOES,
         audioContainer: AUDIO,
         rateLimitContainer: RATES,
         scriptGenQueue: SCRIPT_Q,
@@ -90,7 +90,7 @@ describe('POST /api/lesson/{id}/download (integration)', () => {
         ttsEngine: 'mock',
         rateLimitPerDay: 100,
       },
-      lessons: new BlobLessonRepository(connStr, LESSONS),
+      echoes: new BlobEchoRepository(connStr, ECHOES),
       audio: new BlobAudioStorage(connStr, AUDIO),
       queue: new QueueClient(connStr, SCRIPT_Q, TTS_Q),
       llm: new MockLlmEngine({
@@ -103,36 +103,36 @@ describe('POST /api/lesson/{id}/download (integration)', () => {
     setContextForTests(ctx);
   });
 
-  async function makeReadyLesson(): Promise<string> {
-    const createRes = await lessonCreateHandler(postRequest(lessonParams()));
+  async function makeReadyEcho(): Promise<string> {
+    const createRes = await echoCreateHandler(postRequest(echoParams()));
     const { id } = JSON.parse(createRes.body as string);
-    await scriptGenWorker({ type: 'scriptGen', lessonId: id });
-    const lessonRes = await lessonGetHandler(downloadRequest(id));
-    const lesson = JSON.parse(lessonRes.body as string);
-    for (const s of lesson.sentences) {
-      await ttsSentenceWorker({ type: 'ttsSentence', lessonId: id, sentenceIndex: s.i });
+    await scriptGenWorker({ type: 'scriptGen', echoId: id });
+    const echoRes = await echoGetHandler(downloadRequest(id));
+    const echo = JSON.parse(echoRes.body as string);
+    for (const s of echo.sentences) {
+      await ttsSentenceWorker({ type: 'ttsSentence', echoId: id, sentenceIndex: s.i });
     }
     return id;
   }
 
-  it('returns 404 for unknown lesson', async (ctx) => {
+  it('returns 404 for unknown echo', async (ctx) => {
     if (!connStr) ctx.skip();
-    const res = await lessonDownloadHandler(downloadRequest('does-not-exist'));
+    const res = await echoDownloadHandler(downloadRequest('does-not-exist'));
     expect(res.status).toBe(404);
   });
 
-  it('returns 409 when lesson is not ready', async (ctx) => {
+  it('returns 409 when echo is not ready', async (ctx) => {
     if (!connStr) ctx.skip();
-    const createRes = await lessonCreateHandler(postRequest(lessonParams()));
+    const createRes = await echoCreateHandler(postRequest(echoParams()));
     const { id } = JSON.parse(createRes.body as string);
-    const res = await lessonDownloadHandler(downloadRequest(id));
+    const res = await echoDownloadHandler(downloadRequest(id));
     expect(res.status).toBe(409);
   });
 
-  it('returns 200 with a full mp3 URL once the lesson is ready', async (ctx) => {
+  it('returns 200 with a full mp3 URL once the echo is ready', async (ctx) => {
     if (!connStr) ctx.skip();
-    const id = await makeReadyLesson();
-    const res = await lessonDownloadHandler(downloadRequest(id));
+    const id = await makeReadyEcho();
+    const res = await echoDownloadHandler(downloadRequest(id));
     expect(res.status).toBe(200);
     const body = JSON.parse(res.body as string);
     expect(body.url).toMatch(/\/audio-download-it\/.+\/full\.mp3$/);
@@ -140,9 +140,9 @@ describe('POST /api/lesson/{id}/download (integration)', () => {
 
   it('is idempotent — second download call returns the cached fullMp3Url', async (ctx) => {
     if (!connStr) ctx.skip();
-    const id = await makeReadyLesson();
-    const first = JSON.parse((await lessonDownloadHandler(downloadRequest(id))).body as string);
-    const second = JSON.parse((await lessonDownloadHandler(downloadRequest(id))).body as string);
+    const id = await makeReadyEcho();
+    const first = JSON.parse((await echoDownloadHandler(downloadRequest(id))).body as string);
+    const second = JSON.parse((await echoDownloadHandler(downloadRequest(id))).body as string);
     expect(second.url).toBe(first.url);
   });
 });

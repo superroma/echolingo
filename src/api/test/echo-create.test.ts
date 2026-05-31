@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { lessonCreateHandler } from '../src/functions/lesson-create.js';
+import { echoCreateHandler } from '../src/functions/echo-create.js';
 import { setContextForTests, type ApiContext } from '../src/context.js';
 import {
   InMemoryAudioStorage,
-  InMemoryLessonRepository,
+  InMemoryEchoRepository,
   MockLlmEngine,
   MockTtsEngine,
-  lessonId,
+  echoId,
 } from '../src/_shared/index.js';
 import type { HttpRequest } from '@azure/functions';
-import { lessonParams } from './helpers/fixtures.js';
+import { echoParams } from './helpers/fixtures.js';
 
 class FakeQueueClient {
   scriptGen: Array<unknown> = [];
@@ -28,7 +28,7 @@ function buildContext(): { ctx: ApiContext; queue: FakeQueueClient } {
   const ctx = {
     config: {
       storageConnectionString: 'UseDevelopmentStorage=true',
-      lessonsContainer: 'lessons',
+      echoesContainer: 'echoes',
       audioContainer: 'audio',
       rateLimitContainer: 'rate-limits',
       scriptGenQueue: 'script-gen',
@@ -37,7 +37,7 @@ function buildContext(): { ctx: ApiContext; queue: FakeQueueClient } {
       ttsEngine: 'mock' as const,
       rateLimitPerDay: 1000,
     },
-    lessons: new InMemoryLessonRepository(),
+    echoes: new InMemoryEchoRepository(),
     audio: new InMemoryAudioStorage(),
     queue: queue as unknown as ApiContext['queue'],
     llm: new MockLlmEngine(),
@@ -51,7 +51,7 @@ function buildContext(): { ctx: ApiContext; queue: FakeQueueClient } {
 function jsonRequest(body: unknown): HttpRequest {
   return {
     method: 'POST',
-    url: 'http://localhost/api/lesson',
+    url: 'http://localhost/api/echo',
     headers: new Headers({ 'content-type': 'application/json' }),
     query: new URLSearchParams(),
     params: {},
@@ -69,7 +69,7 @@ function jsonRequest(body: unknown): HttpRequest {
   } as unknown as HttpRequest;
 }
 
-describe('lessonCreateHandler', () => {
+describe('echoCreateHandler', () => {
   let ctx: ApiContext;
   let queue: FakeQueueClient;
 
@@ -78,40 +78,40 @@ describe('lessonCreateHandler', () => {
     setContextForTests(ctx);
   });
 
-  it('returns 400 when body is not a valid LessonParams', async () => {
-    const res = await lessonCreateHandler(jsonRequest({ topic: '' }));
+  it('returns 400 when body is not a valid EchoParams', async () => {
+    const res = await echoCreateHandler(jsonRequest({ topic: '' }));
     expect(res.status).toBe(400);
   });
 
   it('returns 201 with id+status for a fresh request', async () => {
-    const params = lessonParams();
-    const res = await lessonCreateHandler(jsonRequest(params));
+    const params = echoParams();
+    const res = await echoCreateHandler(jsonRequest(params));
     expect(res.status).toBe(201);
     const body = JSON.parse(res.body as string);
-    expect(body.id).toBe(lessonId(params));
+    expect(body.id).toBe(echoId(params));
     expect(body.status).toBe('generating_script');
   });
 
   it('enqueues exactly one scriptGen job on fresh request', async () => {
-    const params = lessonParams();
-    await lessonCreateHandler(jsonRequest(params));
+    const params = echoParams();
+    await echoCreateHandler(jsonRequest(params));
     expect(queue.scriptGen).toHaveLength(1);
-    expect(queue.scriptGen[0]).toEqual({ type: 'scriptGen', lessonId: lessonId(params) });
+    expect(queue.scriptGen[0]).toEqual({ type: 'scriptGen', echoId: echoId(params) });
   });
 
-  it('returns 200 (not 201) and skips enqueue when lesson already exists', async () => {
-    const params = lessonParams();
-    await lessonCreateHandler(jsonRequest(params));
+  it('returns 200 (not 201) and skips enqueue when echo already exists', async () => {
+    const params = echoParams();
+    await echoCreateHandler(jsonRequest(params));
     queue.scriptGen.length = 0;
-    const res = await lessonCreateHandler(jsonRequest(params));
+    const res = await echoCreateHandler(jsonRequest(params));
     expect(res.status).toBe(200);
     expect(queue.scriptGen).toHaveLength(0);
   });
 
-  it('returns 200 when lesson is already ready', async () => {
-    const params = lessonParams();
-    const id = lessonId(params);
-    await ctx.lessons.createIfAbsent({
+  it('returns 200 when echo is already ready', async () => {
+    const params = echoParams();
+    const id = echoId(params);
+    await ctx.echoes.createIfAbsent({
       id,
       params,
       status: 'ready',
@@ -121,7 +121,7 @@ describe('lessonCreateHandler', () => {
       readySentences: 1,
       sentences: [],
     });
-    const res = await lessonCreateHandler(jsonRequest(params));
+    const res = await echoCreateHandler(jsonRequest(params));
     expect(res.status).toBe(200);
     const body = JSON.parse(res.body as string);
     expect(body.status).toBe('ready');

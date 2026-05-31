@@ -2,8 +2,8 @@ import { BlobServiceClient, RestError, type ContainerClient } from '@azure/stora
 import { DefaultAzureCredential } from '@azure/identity';
 import type { AudioLang, AudioStorage } from '../_shared/index.js';
 
-function blobName(lessonId: string, sentenceIndex: number, lang: AudioLang): string {
-  return `${lessonId}/${lang}/${sentenceIndex}.mp3`;
+function blobName(echoId: string, sentenceIndex: number, lang: AudioLang): string {
+  return `${echoId}/${lang}/${sentenceIndex}.mp3`;
 }
 
 export interface BlobAudioStorageOptions {
@@ -42,25 +42,25 @@ export class BlobAudioStorage implements AudioStorage {
   }
 
   async put(
-    lessonId: string,
+    echoId: string,
     sentenceIndex: number,
     lang: AudioLang,
     mp3: Buffer,
   ): Promise<string> {
     await this.ensureContainer();
-    const blob = this.container.getBlockBlobClient(blobName(lessonId, sentenceIndex, lang));
+    const blob = this.container.getBlockBlobClient(blobName(echoId, sentenceIndex, lang));
     await blob.upload(mp3, mp3.length, {
       blobHTTPHeaders: { blobContentType: 'audio/mpeg' },
     });
-    return this.getUrl(lessonId, sentenceIndex, lang);
+    return this.getUrl(echoId, sentenceIndex, lang);
   }
 
   async fetch(
-    lessonId: string,
+    echoId: string,
     sentenceIndex: number,
     lang: AudioLang,
   ): Promise<Buffer | null> {
-    const blob = this.container.getBlockBlobClient(blobName(lessonId, sentenceIndex, lang));
+    const blob = this.container.getBlockBlobClient(blobName(echoId, sentenceIndex, lang));
     try {
       return await blob.downloadToBuffer();
     } catch (err) {
@@ -69,7 +69,7 @@ export class BlobAudioStorage implements AudioStorage {
     }
   }
 
-  getUrl(lessonId: string, sentenceIndex: number, lang: AudioLang): string {
-    return `${this.accountUrl}/${this.containerName}/${blobName(lessonId, sentenceIndex, lang)}`;
+  getUrl(echoId: string, sentenceIndex: number, lang: AudioLang): string {
+    return `${this.accountUrl}/${this.containerName}/${blobName(echoId, sentenceIndex, lang)}`;
   }
 }

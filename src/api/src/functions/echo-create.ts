@@ -1,5 +1,5 @@
 import { app, type HttpRequest, type HttpResponseInit } from '@azure/functions';
-import { isLessonParams, lessonId, type Lesson } from '../_shared/index.js';
+import { isEchoParams, echoId, type Echo } from '../_shared/index.js';
 import { getContext } from '../context.js';
 
 function clientIp(req: HttpRequest): string {
@@ -19,24 +19,24 @@ function tomorrowUtc(): string {
   return t.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-export async function lessonCreateHandler(req: HttpRequest): Promise<HttpResponseInit> {
+export async function echoCreateHandler(req: HttpRequest): Promise<HttpResponseInit> {
   let body: unknown;
   try {
     body = await req.json();
   } catch {
     return json(400, { error: 'invalid JSON body' });
   }
-  if (!isLessonParams(body)) {
-    return json(400, { error: 'invalid LessonParams' });
+  if (!isEchoParams(body)) {
+    return json(400, { error: 'invalid EchoParams' });
   }
 
   const ctx = getContext();
-  const id = lessonId(body);
+  const id = echoId(body);
 
   // Cache-hit fast path (does not consume rate limit)
-  const existing = await ctx.lessons.get(id);
+  const existing = await ctx.echoes.get(id);
   if (existing) {
-    ctx.telemetry.emit({ name: 'lesson.cache_hit', properties: { lessonId: id } });
+    ctx.telemetry.emit({ name: 'echo.cache_hit', properties: { echoId: id } });
     return json(200, { id, status: existing.status });
   }
 
@@ -46,13 +46,13 @@ export async function lessonCreateHandler(req: HttpRequest): Promise<HttpRespons
   const limit = ctx.config.rateLimitPerDay;
   const used = await ctx.rateLimits.get(ip, date);
   if (used >= limit) {
-    ctx.telemetry.emit({ name: 'lesson.rate_limited', properties: { ip, used, limit } });
+    ctx.telemetry.emit({ name: 'echo.rate_limited', properties: { ip, used, limit } });
     return json(429, { limit, used, resetAt: tomorrowUtc() });
   }
   await ctx.rateLimits.increment(ip, date);
 
   const now = new Date().toISOString();
-  const fresh: Lesson = {
+  const fresh: Echo = {
     id,
     params: body,
     status: 'generating_script',
@@ -63,13 +63,13 @@ export async function lessonCreateHandler(req: HttpRequest): Promise<HttpRespons
     sentences: [],
   };
 
-  const persisted = await ctx.lessons.createIfAbsent(fresh);
+  const persisted = await ctx.echoes.createIfAbsent(fresh);
   const wasFresh = persisted.createdAt === fresh.createdAt;
   if (wasFresh) {
-    await ctx.queue.enqueueScriptGen({ type: 'scriptGen', lessonId: id });
+    await ctx.queue.enqueueScriptGen({ type: 'scriptGen', echoId: id });
     ctx.telemetry.emit({
-      name: 'lesson.created',
-      properties: { lessonId: id, llmEngine: ctx.config.llmEngine, ttsEngine: ctx.config.ttsEngine },
+      name: 'echo.created',
+      properties: { echoId: id, llmEngine: ctx.config.llmEngine, ttsEngine: ctx.config.ttsEngine },
     });
     return json(201, { id, status: persisted.status });
   }
@@ -84,9 +84,9 @@ function json(status: number, body: unknown): HttpResponseInit {
   };
 }
 
-app.http('lessonCreate', {
-  route: 'lesson',
+app.http('echoCreate', {
+  route: 'echo',
   methods: ['POST'],
   authLevel: 'anonymous',
-  handler: lessonCreateHandler,
+  handler: echoCreateHandler,
 });

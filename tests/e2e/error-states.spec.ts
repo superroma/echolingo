@@ -1,9 +1,9 @@
 import { test, expect } from './fixture';
-import { mockCreateLesson, mockGetLesson } from './helpers';
+import { mockCreateEcho, mockGetEcho } from './helpers';
 
 test.describe('error states', () => {
   test('rate-limited POST shows daily-limit message', async ({ page }) => {
-    await mockCreateLesson(page, {
+    await mockCreateEcho(page, {
       kind: 'rate_limited',
       limit: 5,
       used: 5,
@@ -25,7 +25,7 @@ test.describe('error states', () => {
     const id = 'retried-1';
 
     let calls = 0;
-    await page.route('**/api/lesson', async (route) => {
+    await page.route('**/api/echo', async (route) => {
       if (route.request().method() !== 'POST') {
         await route.fallback();
         return;
@@ -41,7 +41,7 @@ test.describe('error states', () => {
         });
       }
     });
-    await mockGetLesson(page, id, [{ id, status: 'generating_script' }]);
+    await mockGetEcho(page, id, [{ id, status: 'generating_script' }]);
 
     await page.goto('/');
     await page.getByPlaceholder(/at the bakery/i).fill('anything');
@@ -53,7 +53,7 @@ test.describe('error states', () => {
     await expect(page).toHaveURL(new RegExp(`/echo/${id}/?$`));
   });
 
-  test('failed lesson shows Retry; retry posts again and navigates to new id', async ({
+  test('failed echo shows Retry; retry posts again and navigates to new id', async ({
     page,
   }) => {
     const originalId = 'orig-1';
@@ -80,11 +80,11 @@ test.describe('error states', () => {
       { id: originalId },
     );
 
-    await mockGetLesson(page, originalId, [
+    await mockGetEcho(page, originalId, [
       { id: originalId, status: 'failed', error: 'LLM exploded' },
     ]);
-    await mockCreateLesson(page, { kind: 'created', id: newId });
-    await mockGetLesson(page, newId, [{ id: newId, status: 'generating_script' }]);
+    await mockCreateEcho(page, { kind: 'created', id: newId });
+    await mockGetEcho(page, newId, [{ id: newId, status: 'generating_script' }]);
 
     await page.goto(`/echo/${originalId}/`);
     await expect(page.getByText('Generation failed')).toBeVisible();
@@ -96,7 +96,7 @@ test.describe('error states', () => {
 
   test('GET 404 on existing echo shows not-found view', async ({ page }) => {
     const id = 'gone';
-    await mockGetLesson(page, id, [{ kind: 'not_found' }]);
+    await mockGetEcho(page, id, [{ kind: 'not_found' }]);
     await page.goto(`/echo/${id}/`);
     await expect(page.getByText('Echo not found')).toBeVisible();
   });

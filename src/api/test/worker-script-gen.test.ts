@@ -3,13 +3,13 @@ import { scriptGenWorker } from '../src/functions/worker-script-gen.js';
 import { setContextForTests, type ApiContext } from '../src/context.js';
 import {
   InMemoryAudioStorage,
-  InMemoryLessonRepository,
+  InMemoryEchoRepository,
   MockLlmEngine,
   MockTtsEngine,
-  lessonId,
-  type Lesson,
+  echoId,
+  type Echo,
 } from '../src/_shared/index.js';
-import { lessonParams } from './helpers/fixtures.js';
+import { echoParams } from './helpers/fixtures.js';
 
 class FakeQueueClient {
   scriptGen: Array<unknown> = [];
@@ -41,7 +41,7 @@ function buildContext(opts: { llmScript?: string; llmThrows?: boolean } = {}): {
   const ctx: ApiContext = {
     config: {
       storageConnectionString: 'UseDevelopmentStorage=true',
-      lessonsContainer: 'lessons',
+      echoesContainer: 'echoes',
       audioContainer: 'audio',
       rateLimitContainer: 'rate-limits',
       scriptGenQueue: 'script-gen',
@@ -50,7 +50,7 @@ function buildContext(opts: { llmScript?: string; llmThrows?: boolean } = {}): {
       ttsEngine: 'mock' as const,
       rateLimitPerDay: 1000,
     },
-    lessons: new InMemoryLessonRepository(),
+    echoes: new InMemoryEchoRepository(),
     audio: new InMemoryAudioStorage(),
     queue: queue as unknown as ApiContext['queue'],
     llm,
@@ -61,10 +61,10 @@ function buildContext(opts: { llmScript?: string; llmThrows?: boolean } = {}): {
   return { ctx, queue };
 }
 
-async function seedLesson(ctx: ApiContext): Promise<Lesson> {
-  const params = lessonParams();
-  const id = lessonId(params);
-  return ctx.lessons.createIfAbsent({
+async function seedEcho(ctx: ApiContext): Promise<Echo> {
+  const params = echoParams();
+  const id = echoId(params);
+  return ctx.echoes.createIfAbsent({
     id,
     params,
     status: 'generating_script',
@@ -80,60 +80,60 @@ describe('scriptGenWorker', () => {
   it('parses script, persists transcript, fans out TTS jobs', async () => {
     const { ctx, queue } = buildContext();
     setContextForTests(ctx);
-    const lesson = await seedLesson(ctx);
+    const echo = await seedEcho(ctx);
 
-    await scriptGenWorker({ type: 'scriptGen', lessonId: lesson.id });
+    await scriptGenWorker({ type: 'scriptGen', echoId: echo.id });
 
-    const updated = await ctx.lessons.get(lesson.id);
+    const updated = await ctx.echoes.get(echo.id);
     expect(updated?.status).toBe('generating_audio');
     expect(updated?.totalSentences).toBe(2);
     expect(updated?.sentences.map((s) => s.gr)).toEqual(['Καλημέρα.', 'Γεια σου.']);
     expect(queue.ttsSentence).toEqual([
-      { type: 'ttsSentence', lessonId: lesson.id, sentenceIndex: 0 },
-      { type: 'ttsSentence', lessonId: lesson.id, sentenceIndex: 1 },
+      { type: 'ttsSentence', echoId: echo.id, sentenceIndex: 0 },
+      { type: 'ttsSentence', echoId: echo.id, sentenceIndex: 1 },
     ]);
   });
 
-  it('marks lesson failed when LLM throws', async () => {
+  it('marks echo failed when LLM throws', async () => {
     const { ctx } = buildContext({ llmThrows: true });
     setContextForTests(ctx);
-    const lesson = await seedLesson(ctx);
+    const echo = await seedEcho(ctx);
 
-    await expect(scriptGenWorker({ type: 'scriptGen', lessonId: lesson.id })).rejects.toThrow(/boom/);
+    await expect(scriptGenWorker({ type: 'scriptGen', echoId: echo.id })).rejects.toThrow(/boom/);
 
-    const updated = await ctx.lessons.get(lesson.id);
+    const updated = await ctx.echoes.get(echo.id);
     expect(updated?.status).toBe('failed');
     expect(updated?.error).toMatch(/boom/);
   });
 
-  it('marks lesson failed when script parses to zero sentences', async () => {
+  it('marks echo failed when script parses to zero sentences', async () => {
     const { ctx } = buildContext({ llmScript: 'bad output with no separator' });
     setContextForTests(ctx);
-    const lesson = await seedLesson(ctx);
+    const echo = await seedEcho(ctx);
 
-    await expect(scriptGenWorker({ type: 'scriptGen', lessonId: lesson.id })).rejects.toThrow(/empty/i);
+    await expect(scriptGenWorker({ type: 'scriptGen', echoId: echo.id })).rejects.toThrow(/empty/i);
 
-    const updated = await ctx.lessons.get(lesson.id);
+    const updated = await ctx.echoes.get(echo.id);
     expect(updated?.status).toBe('failed');
   });
 
-  it('is idempotent: re-running on a lesson already in generating_audio is a no-op', async () => {
+  it('is idempotent: re-running on an echo already in generating_audio is a no-op', async () => {
     const { ctx, queue } = buildContext();
     setContextForTests(ctx);
-    const lesson = await seedLesson(ctx);
-    await scriptGenWorker({ type: 'scriptGen', lessonId: lesson.id });
+    const echo = await seedEcho(ctx);
+    await scriptGenWorker({ type: 'scriptGen', echoId: echo.id });
     queue.ttsSentence.length = 0;
 
-    await scriptGenWorker({ type: 'scriptGen', lessonId: lesson.id });
+    await scriptGenWorker({ type: 'scriptGen', echoId: echo.id });
 
     expect(queue.ttsSentence).toHaveLength(0);
   });
 
-  it('throws when the lesson does not exist', async () => {
+  it('throws when the echo does not exist', async () => {
     const { ctx } = buildContext();
     setContextForTests(ctx);
     await expect(
-      scriptGenWorker({ type: 'scriptGen', lessonId: 'missing' }),
+      scriptGenWorker({ type: 'scriptGen', echoId: 'missing' }),
     ).rejects.toThrow(/not found/i);
   });
 });

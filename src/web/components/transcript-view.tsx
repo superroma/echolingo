@@ -1,15 +1,15 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { Lesson, Sentence } from '@echolingo/shared/types';
+import type { Echo, Sentence } from '@echolingo/shared/types';
 
 export function TranscriptView({
-  lesson,
+  echo,
   currentSentence,
   showNative,
   onJump,
 }: {
-  lesson: Lesson;
+  echo: Echo;
   currentSentence: number;
   showNative: boolean;
   onJump: (sentenceIdx: number) => void;
@@ -63,7 +63,7 @@ export function TranscriptView({
 
   return (
     <ol ref={containerRef} className="px-[22px] pb-7 pt-3.5">
-      {lesson.sentences.map((s) => {
+      {echo.sentences.map((s) => {
         const isCurrent = s.i === currentSentence;
         const isPast = s.i < currentSentence;
         return (

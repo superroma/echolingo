@@ -1,4 +1,4 @@
-import type { Lesson } from './types.js';
+import type { Echo } from './types.js';
 
 export type AudioLang = 'gr' | 'native';
 
@@ -9,12 +9,12 @@ export interface PlaylistEntry {
   durationSec: number;
 }
 
-export function buildPlaylist(lesson: Lesson): PlaylistEntry[] {
+export function buildPlaylist(echo: Echo): PlaylistEntry[] {
   const out: PlaylistEntry[] = [];
-  const mode = lesson.params.mode;
-  const order = lesson.params.bilingualOrder;
+  const mode = echo.params.mode;
+  const order = echo.params.bilingualOrder;
 
-  for (const s of lesson.sentences) {
+  for (const s of echo.sentences) {
     if (s.status !== 'ready') continue;
 
     const grEntry: PlaylistEntry | null = s.grUrl
@@ -47,13 +47,13 @@ export function buildPlaylist(lesson: Lesson): PlaylistEntry[] {
 }
 
 /**
- * The playlist to actually play. When a bilingual lesson has its translation
+ * The playlist to actually play. When a bilingual echo has its translation
  * turned off, the native-language audio is dropped (not just hidden in the
- * transcript) so it isn't read aloud. Target-only lessons are unaffected.
+ * transcript) so it isn't read aloud. Target-only echoes are unaffected.
  */
-export function playablePlaylist(lesson: Lesson, includeTranslation: boolean): PlaylistEntry[] {
-  const full = buildPlaylist(lesson);
-  if (lesson.params.mode === 'bilingual' && !includeTranslation) {
+export function playablePlaylist(echo: Echo, includeTranslation: boolean): PlaylistEntry[] {
+  const full = buildPlaylist(echo);
+  if (echo.params.mode === 'bilingual' && !includeTranslation) {
     return full.filter((e) => e.lang === 'gr');
   }
   return full;

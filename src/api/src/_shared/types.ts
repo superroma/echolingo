@@ -18,13 +18,13 @@ export const LANG_NAME: Record<LangCode, string> = {
   ru: 'Russian',
 };
 
-export const LESSON_LENGTHS = [5, 10, 20, 30] as const;
-export type LessonLength = (typeof LESSON_LENGTHS)[number];
+export const ECHO_LENGTHS = [5, 10, 20, 30] as const;
+export type EchoLength = (typeof ECHO_LENGTHS)[number];
 
-export const LESSON_LEVELS = [1, 2, 3, 4, 5, 6] as const;
-export type LessonLevel = (typeof LESSON_LEVELS)[number];
+export const ECHO_LEVELS = [1, 2, 3, 4, 5, 6] as const;
+export type EchoLevel = (typeof ECHO_LEVELS)[number];
 
-export const CEFR_LABEL: Record<LessonLevel, string> = {
+export const CEFR_LABEL: Record<EchoLevel, string> = {
   1: 'A1',
   2: 'A2',
   3: 'B1',
@@ -35,12 +35,12 @@ export const CEFR_LABEL: Record<LessonLevel, string> = {
 
 /** CEFR band label for a level, clamping out-of-range input to the nearest end. */
 export function cefr(level: number): string {
-  const n = Math.min(6, Math.max(1, Math.round(level))) as LessonLevel;
+  const n = Math.min(6, Math.max(1, Math.round(level))) as EchoLevel;
   return CEFR_LABEL[n];
 }
 
-export const LESSON_MODES = ['target_only', 'bilingual'] as const;
-export type LessonMode = (typeof LESSON_MODES)[number];
+export const ECHO_MODES = ['target_only', 'bilingual'] as const;
+export type EchoMode = (typeof ECHO_MODES)[number];
 
 export const BILINGUAL_ORDERS = ['target_first', 'native_first'] as const;
 export type BilingualOrder = (typeof BILINGUAL_ORDERS)[number];
@@ -48,13 +48,13 @@ export type BilingualOrder = (typeof BILINGUAL_ORDERS)[number];
 export const TTS_ENGINES = ['openai', 'elevenlabs', 'google'] as const;
 export type TtsEngineName = (typeof TTS_ENGINES)[number];
 
-export interface LessonParams {
+export interface EchoParams {
   topic: string;
   targetLang: LangCode;
   nativeLang: LangCode;
-  lengthMin: LessonLength;
-  level: LessonLevel;
-  mode: LessonMode;
+  lengthMin: EchoLength;
+  level: EchoLevel;
+  mode: EchoMode;
   bilingualOrder: BilingualOrder;
   ttsEngine: TtsEngineName;
   voice?: string;
@@ -73,16 +73,16 @@ export interface Sentence {
   nativeDurSec?: number;
 }
 
-export type LessonStatus =
+export type EchoStatus =
   | 'generating_script'
   | 'generating_audio'
   | 'ready'
   | 'failed';
 
-export interface Lesson {
+export interface Echo {
   id: string;
-  params: LessonParams;
-  status: LessonStatus;
+  params: EchoParams;
+  status: EchoStatus;
   createdAt: string;
   updatedAt: string;
   totalSentences: number;
@@ -92,16 +92,16 @@ export interface Lesson {
   error?: string;
 }
 
-export function isLessonParams(v: unknown): v is LessonParams {
+export function isEchoParams(v: unknown): v is EchoParams {
   if (typeof v !== 'object' || v === null) return false;
   const o = v as Record<string, unknown>;
   if (typeof o.topic !== 'string' || o.topic.trim().length === 0) return false;
   if (!LANG_CODES.includes(o.targetLang as LangCode)) return false;
   if (!LANG_CODES.includes(o.nativeLang as LangCode)) return false;
   if (o.targetLang === o.nativeLang) return false;
-  if (!LESSON_LENGTHS.includes(o.lengthMin as LessonLength)) return false;
-  if (!LESSON_LEVELS.includes(o.level as LessonLevel)) return false;
-  if (!LESSON_MODES.includes(o.mode as LessonMode)) return false;
+  if (!ECHO_LENGTHS.includes(o.lengthMin as EchoLength)) return false;
+  if (!ECHO_LEVELS.includes(o.level as EchoLevel)) return false;
+  if (!ECHO_MODES.includes(o.mode as EchoMode)) return false;
   if (!BILINGUAL_ORDERS.includes(o.bilingualOrder as BilingualOrder)) return false;
   if (!TTS_ENGINES.includes(o.ttsEngine as TtsEngineName)) return false;
   if (o.voice !== undefined && typeof o.voice !== 'string') return false;

@@ -2,13 +2,13 @@ import appInsights from 'applicationinsights';
 
 export interface TelemetryEvent {
   name:
-    | 'lesson.created'
-    | 'lesson.cache_hit'
-    | 'lesson.rate_limited'
-    | 'lesson.script_ready'
-    | 'lesson.audio_ready'
-    | 'lesson.failed'
-    | 'lesson.downloaded';
+    | 'echo.created'
+    | 'echo.cache_hit'
+    | 'echo.rate_limited'
+    | 'echo.script_ready'
+    | 'echo.audio_ready'
+    | 'echo.failed'
+    | 'echo.downloaded';
   properties?: Record<string, string | number | undefined>;
 }
 

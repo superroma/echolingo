@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildPlaylist, playablePlaylist } from '../src/playlist.js';
-import type { Lesson } from '../src/types.js';
+import type { Echo } from '../src/types.js';
 
-function lesson(overrides: Partial<Lesson> = {}): Lesson {
+function echo(overrides: Partial<Echo> = {}): Echo {
   return {
     id: 'l1',
     params: {
@@ -48,7 +48,7 @@ function lesson(overrides: Partial<Lesson> = {}): Lesson {
 
 describe('buildPlaylist', () => {
   it('produces target-then-native pairs in bilingual target_first mode', () => {
-    const entries = buildPlaylist(lesson());
+    const entries = buildPlaylist(echo());
     expect(entries).toEqual([
       { sentenceIndex: 0, lang: 'gr', url: 'https://e/gr/0.mp3', durationSec: 1.2 },
       { sentenceIndex: 0, lang: 'native', url: 'https://e/native/0.mp3', durationSec: 1.1 },
@@ -59,7 +59,7 @@ describe('buildPlaylist', () => {
 
   it('produces native-then-target pairs in bilingual native_first mode', () => {
     const entries = buildPlaylist(
-      lesson({ params: { ...lesson().params, bilingualOrder: 'native_first' } }),
+      echo({ params: { ...echo().params, bilingualOrder: 'native_first' } }),
     );
     expect(entries.map((e) => `${e.sentenceIndex}-${e.lang}`)).toEqual([
       '0-native',
@@ -71,7 +71,7 @@ describe('buildPlaylist', () => {
 
   it('produces only target entries in target_only mode', () => {
     const entries = buildPlaylist(
-      lesson({ params: { ...lesson().params, mode: 'target_only' } }),
+      echo({ params: { ...echo().params, mode: 'target_only' } }),
     );
     expect(entries).toEqual([
       { sentenceIndex: 0, lang: 'gr', url: 'https://e/gr/0.mp3', durationSec: 1.2 },
@@ -80,7 +80,7 @@ describe('buildPlaylist', () => {
   });
 
   it('skips sentences that are not ready', () => {
-    const l = lesson();
+    const l = echo();
     l.sentences[1]!.status = 'pending';
     l.sentences[1]!.grUrl = undefined;
     l.sentences[1]!.nativeUrl = undefined;
@@ -90,7 +90,7 @@ describe('buildPlaylist', () => {
   });
 
   it('skips a side of a bilingual pair if its URL is missing', () => {
-    const l = lesson();
+    const l = echo();
     l.sentences[0]!.nativeUrl = undefined;
     const entries = buildPlaylist(l);
     expect(entries.map((e) => `${e.sentenceIndex}-${e.lang}`)).toEqual([
@@ -103,18 +103,18 @@ describe('buildPlaylist', () => {
 
 describe('playablePlaylist', () => {
   it('includes both languages when translation is on', () => {
-    const entries = playablePlaylist(lesson(), true);
+    const entries = playablePlaylist(echo(), true);
     expect(entries.map((e) => e.lang)).toEqual(['gr', 'native', 'gr', 'native']);
   });
 
   it('drops native audio when translation is off (not just hidden)', () => {
-    const entries = playablePlaylist(lesson(), false);
+    const entries = playablePlaylist(echo(), false);
     expect(entries.map((e) => e.lang)).toEqual(['gr', 'gr']);
     expect(entries.some((e) => e.lang === 'native')).toBe(false);
   });
 
-  it('is unaffected for target_only lessons', () => {
-    const l = lesson({ params: { ...lesson().params, mode: 'target_only' } });
+  it('is unaffected for target_only echoes', () => {
+    const l = echo({ params: { ...echo().params, mode: 'target_only' } });
     expect(playablePlaylist(l, false)).toEqual(buildPlaylist(l));
     expect(playablePlaylist(l, true)).toEqual(buildPlaylist(l));
   });

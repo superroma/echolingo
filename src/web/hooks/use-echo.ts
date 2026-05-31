@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Lesson } from '@echolingo/shared/types';
-import { getLesson, type GetLessonResult } from '../lib/api';
+import type { Echo } from '@echolingo/shared/types';
+import { getEcho, type GetEchoResult } from '../lib/api';
 
 export type EchoState =
   | { kind: 'loading' }
   | { kind: 'not_found' }
   | { kind: 'error'; message: string }
-  | { kind: 'ok'; echo: Lesson };
+  | { kind: 'ok'; echo: Echo };
 
 const POLL_INTERVAL_MS = 2000;
 // A transient blip (dropped poll, cold-start 5xx, CORS hiccup) must not freeze
@@ -26,11 +26,11 @@ export interface PollDecision {
 }
 
 /**
- * Pure poll state-machine. Terminal results (not_found, failed/ready lesson,
- * sustained errors) stop polling; a generating lesson or a transient error
+ * Pure poll state-machine. Terminal results (not_found, failed/ready echo,
+ * sustained errors) stop polling; a generating echo or a transient error
  * keeps it going.
  */
-export function decidePoll(result: GetLessonResult, prevErrors: number): PollDecision {
+export function decidePoll(result: GetEchoResult, prevErrors: number): PollDecision {
   if (result.kind === 'not_found') {
     return { state: { kind: 'not_found' }, continuePolling: false, consecutiveErrors: 0 };
   }
@@ -41,9 +41,9 @@ export function decidePoll(result: GetLessonResult, prevErrors: number): PollDec
     }
     return { continuePolling: true, consecutiveErrors };
   }
-  const s = result.lesson.status;
+  const s = result.echo.status;
   const generating = s === 'generating_script' || s === 'generating_audio';
-  return { state: { kind: 'ok', echo: result.lesson }, continuePolling: generating, consecutiveErrors: 0 };
+  return { state: { kind: 'ok', echo: result.echo }, continuePolling: generating, consecutiveErrors: 0 };
 }
 
 export function useEcho(id: string, reloadToken = 0): EchoState {
@@ -55,9 +55,9 @@ export function useEcho(id: string, reloadToken = 0): EchoState {
     let consecutiveErrors = 0;
 
     async function tick() {
-      let result: GetLessonResult;
+      let result: GetEchoResult;
       try {
-        result = await getLesson(id);
+        result = await getEcho(id);
       } catch {
         // fetch rejected (network/CORS) — treat as a transient error.
         result = { kind: 'error', status: 0, message: 'network error' };

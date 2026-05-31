@@ -1,11 +1,11 @@
 import { test, expect } from './fixture';
-import { mockCreateLesson, mockGetLesson } from './helpers';
+import { mockCreateEcho, mockGetEcho } from './helpers';
 
 test.describe('create echo flow', () => {
   test('submitting navigates to new echo page and shows progress', async ({ page }) => {
     const id = 'abc123';
-    await mockCreateLesson(page, { kind: 'created', id });
-    await mockGetLesson(page, id, [
+    await mockCreateEcho(page, { kind: 'created', id });
+    await mockGetEcho(page, id, [
       { id, status: 'generating_script' },
       {
         id,
@@ -32,8 +32,8 @@ test.describe('create echo flow', () => {
     page,
   }) => {
     const id = 'persisted-1';
-    await mockCreateLesson(page, { kind: 'created', id });
-    await mockGetLesson(page, id, [
+    await mockCreateEcho(page, { kind: 'created', id });
+    await mockGetEcho(page, id, [
       { id, status: 'generating_script', topic: 'a walk through Plaka' },
     ]);
 

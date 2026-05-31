@@ -93,7 +93,7 @@ module functionApp './modules/function-app.bicep' = {
     storageAccountName: storage.outputs.storageAccountName
     storageBlobEndpoint: storage.outputs.storageBlobEndpoint
     storageQueueEndpoint: storage.outputs.storageQueueEndpoint
-    lessonsContainer: storage.outputs.lessonsContainer
+    echoesContainer: storage.outputs.echoesContainer
     audioContainer: storage.outputs.audioContainer
     rateLimitContainer: storage.outputs.rateLimitContainer
     scriptGenQueue: storage.outputs.scriptGenQueue

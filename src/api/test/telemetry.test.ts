@@ -5,7 +5,7 @@ describe('createTelemetry', () => {
   it('returns a no-op emitter when no connection string is provided', () => {
     const t = createTelemetry({ connectionString: undefined });
     expect(() =>
-      t.emit({ name: 'lesson.created', properties: { lessonId: 'abc' } }),
+      t.emit({ name: 'echo.created', properties: { echoId: 'abc' } }),
     ).not.toThrow();
   });
 
@@ -15,12 +15,12 @@ describe('createTelemetry', () => {
       connectionString: 'InstrumentationKey=test',
       sink: (e) => recorded.push(e),
     });
-    t.emit({ name: 'lesson.created', properties: { lessonId: 'abc', engine: 'openai' } });
-    t.emit({ name: 'lesson.failed', properties: { lessonId: 'abc', error: 'boom' } });
+    t.emit({ name: 'echo.created', properties: { echoId: 'abc', engine: 'openai' } });
+    t.emit({ name: 'echo.failed', properties: { echoId: 'abc', error: 'boom' } });
     expect(recorded).toHaveLength(2);
     expect(recorded[0]).toEqual({
-      name: 'lesson.created',
-      properties: { lessonId: 'abc', engine: 'openai' },
+      name: 'echo.created',
+      properties: { echoId: 'abc', engine: 'openai' },
     });
   });
 });

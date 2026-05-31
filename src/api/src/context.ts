@@ -2,13 +2,13 @@ import {
   MockLlmEngine,
   MockTtsEngine,
   type AudioStorage,
-  type LessonRepository,
+  type EchoRepository,
   type LlmEngine,
   type TtsEngine,
 } from './_shared/index.js';
 import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity';
 import { loadConfig, type Config } from './config.js';
-import { BlobLessonRepository } from './storage/blob-lesson-repository.js';
+import { BlobEchoRepository } from './storage/blob-echo-repository.js';
 import { BlobAudioStorage } from './storage/blob-audio-storage.js';
 import { BlobRateLimitStore } from './storage/blob-rate-limit-store.js';
 import { QueueClient } from './queue/queue-client.js';
@@ -23,7 +23,7 @@ export interface RateLimitStore {
 
 export interface ApiContext {
   config: Config;
-  lessons: LessonRepository;
+  echoes: EchoRepository;
   audio: AudioStorage;
   queue: QueueClient;
   llm: LlmEngine;
@@ -83,16 +83,16 @@ function buildTts(config: Config): TtsEngine {
   });
 }
 
-function buildLessons(config: Config): LessonRepository {
+function buildEchoes(config: Config): EchoRepository {
   if (config.blobEndpoint) {
-    return new BlobLessonRepository({
+    return new BlobEchoRepository({
       endpoint: config.blobEndpoint,
-      containerName: config.lessonsContainer,
+      containerName: config.echoesContainer,
     });
   }
-  return new BlobLessonRepository({
+  return new BlobEchoRepository({
     connectionString: config.storageConnectionString!,
-    containerName: config.lessonsContainer,
+    containerName: config.echoesContainer,
   });
 }
 
@@ -142,7 +142,7 @@ export function getContext(): ApiContext {
   const config = loadConfig();
   cached = {
     config,
-    lessons: buildLessons(config),
+    echoes: buildEchoes(config),
     audio: buildAudio(config),
     queue: buildQueue(config),
     llm: buildLlm(config),

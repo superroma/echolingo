@@ -7,24 +7,24 @@ import type { Config } from '../config.js';
 
 const FULL_BLOB_NAME = 'full.mp3';
 
-export async function lessonDownloadHandler(req: HttpRequest): Promise<HttpResponseInit> {
+export async function echoDownloadHandler(req: HttpRequest): Promise<HttpResponseInit> {
   const id = req.params.id;
   if (!id) return json(400, { error: 'missing id' });
   const ctx = getContext();
-  const lesson = await ctx.lessons.get(id);
-  if (!lesson) return json(404, { error: 'lesson not found' });
-  if (lesson.status !== 'ready') {
-    return json(409, { error: `lesson is ${lesson.status}, not ready` });
+  const echo = await ctx.echoes.get(id);
+  if (!echo) return json(404, { error: 'echo not found' });
+  if (echo.status !== 'ready') {
+    return json(409, { error: `echo is ${echo.status}, not ready` });
   }
 
-  if (lesson.fullMp3Url) {
-    return json(200, { url: lesson.fullMp3Url });
+  if (echo.fullMp3Url) {
+    return json(200, { url: echo.fullMp3Url });
   }
 
-  const order = lesson.params.bilingualOrder;
-  const mode = lesson.params.mode;
+  const order = echo.params.bilingualOrder;
+  const mode = echo.params.mode;
   const parts: Array<Buffer | null> = [];
-  for (const sentence of lesson.sentences) {
+  for (const sentence of echo.sentences) {
     const gr = await ctx.audio.fetch(id, sentence.i, 'gr');
     const native =
       mode === 'bilingual' ? await ctx.audio.fetch(id, sentence.i, 'native') : null;
@@ -43,21 +43,21 @@ export async function lessonDownloadHandler(req: HttpRequest): Promise<HttpRespo
     id,
     fullMp3,
   );
-  await ctx.lessons.update(id, (l) => ({
-    ...l,
+  await ctx.echoes.update(id, (e) => ({
+    ...e,
     fullMp3Url: fullUrl,
     updatedAt: new Date().toISOString(),
   }));
   ctx.telemetry.emit({
-    name: 'lesson.downloaded',
-    properties: { lessonId: id, bytes: fullMp3.length },
+    name: 'echo.downloaded',
+    properties: { echoId: id, bytes: fullMp3.length },
   });
   return json(200, { url: fullUrl });
 }
 
 async function uploadFullBlob(
   config: Config,
-  lessonId: string,
+  echoId: string,
   data: Buffer,
 ): Promise<string> {
   const container = config.audioContainer;
@@ -71,11 +71,11 @@ async function uploadFullBlob(
   }
   const containerClient = service.getContainerClient(container);
   await containerClient.createIfNotExists();
-  const blob = containerClient.getBlockBlobClient(`${lessonId}/${FULL_BLOB_NAME}`);
+  const blob = containerClient.getBlockBlobClient(`${echoId}/${FULL_BLOB_NAME}`);
   await blob.upload(data, data.length, {
     blobHTTPHeaders: { blobContentType: 'audio/mpeg' },
   });
-  return `${service.url.replace(/\/$/, '')}/${container}/${lessonId}/${FULL_BLOB_NAME}`;
+  return `${service.url.replace(/\/$/, '')}/${container}/${echoId}/${FULL_BLOB_NAME}`;
 }
 
 function json(status: number, body: unknown): HttpResponseInit {
@@ -86,9 +86,9 @@ function json(status: number, body: unknown): HttpResponseInit {
   };
 }
 
-app.http('lessonDownload', {
-  route: 'lesson/{id}/download',
+app.http('echoDownload', {
+  route: 'echo/{id}/download',
   methods: ['POST'],
   authLevel: 'anonymous',
-  handler: lessonDownloadHandler,
+  handler: echoDownloadHandler,
 });
