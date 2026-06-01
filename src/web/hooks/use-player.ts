@@ -77,6 +77,13 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string, generating
   const [buffering, setBuffering] = useState(false);
   const [speed, setSpeedState] = useState(() => (typeof window !== 'undefined' ? loadSpeed() : 1));
 
+  // Mirrors read inside the timeupdate listener (whose closure is bound only when
+  // playlist.length changes, so it would otherwise see a stale chunk/playlist).
+  const currentChunkRef = useRef(currentChunk);
+  currentChunkRef.current = currentChunk;
+  const playlistRef = useRef(playlist);
+  playlistRef.current = playlist;
+
   const currentSentence = useMemo(() => {
     if (playlist.length === 0) return 0;
     const entry = playlist[currentChunk] ?? playlist[playlist.length - 1]!;
@@ -252,7 +259,14 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string, generating
     const audio = audioRef.current;
     if (!audio || !echoId) return;
     const onTime = () => {
-      if (audio.currentTime > 0) savePosition(echoId, audio.currentTime);
+      // Save CUMULATIVE elapsed (sum of prior chunk durations + in-chunk time),
+      // not the per-chunk currentTime — otherwise resume and the home-screen
+      // progress ring always resolve back to the first sentence.
+      const pl = playlistRef.current;
+      const chunk = currentChunkRef.current;
+      let elapsed = audio.currentTime;
+      for (let i = 0; i < chunk && i < pl.length; i++) elapsed += pl[i]!.durationSec || 0;
+      if (elapsed > 0) savePosition(echoId, elapsed);
     };
     audio.addEventListener('timeupdate', onTime);
     return () => audio.removeEventListener('timeupdate', onTime);
