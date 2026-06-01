@@ -333,7 +333,7 @@ function ExistingEcho({ id }: { id: string }) {
 
   const { echo } = state;
 
-  if (echo.status === 'failed') {
+  if (echo.status === 'failed' && echo.readySentences === 0) {
     if (retrying) {
       return (
         <PageFrame title={headerTitle}>
@@ -388,6 +388,19 @@ function ExistingEcho({ id }: { id: string }) {
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-2xl">
           {shared && <ShareContextStrip echo={echo} />}
+          {echo.status === 'failed' && (
+            <div className="mx-[22px] mt-3 border-l-2 border-accent bg-paper px-4 py-3 text-sm text-ink-soft">
+              <p className="font-medium text-ink">Generation stopped early</p>
+              <p>Some sentences couldn’t be generated. The rest play normally.</p>
+              <button
+                type="button"
+                onClick={() => void retryFailed(echo)}
+                className="mt-2 rounded-full bg-accent px-5 py-1.5 text-sm font-medium text-accent-ink"
+              >
+                Retry
+              </button>
+            </div>
+          )}
           <TranscriptView
             echo={echo}
             currentSentence={player.state.currentSentence}
