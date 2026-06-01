@@ -28,16 +28,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${serif.variable}`}>
       <head>
-        <Script id="theme-init" strategy="beforeInteractive">
-          {`
-            try {
-              var t = localStorage.getItem('echolingo:theme');
-              if (t === 'light' || t === 'dark') {
-                document.documentElement.classList.add('theme-' + t);
-              }
-            } catch (e) {}
-          `}
-        </Script>
+        {/*
+          Raw inline script (NOT next/script): it must run synchronously during
+          <head> parse, before first paint, so the saved theme is applied before
+          the page renders. next/script strategy="beforeInteractive" is queued via
+          self.__next_s and only runs once the framework loads — too late, causing
+          a flash of the default (light) theme before dark applies.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('echolingo:theme');if(t==='light'||t==='dark'){document.documentElement.classList.add('theme-'+t);}}catch(e){}",
+          }}
+        />
       </head>
       <body className="min-h-dvh bg-paper font-sans text-ink antialiased">
         {children}
