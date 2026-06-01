@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   LANG_CODES,
+  LANG_NAME,
   ECHO_LEVELS,
   ECHO_LENGTHS,
   ECHO_MODES,
@@ -26,10 +27,17 @@ describe('domain enums', () => {
     expect(BILINGUAL_ORDERS).toEqual(['target_first', 'native_first']);
   });
 
-  it('exposes the curated v1 language codes', () => {
-    expect(LANG_CODES).toEqual([
-      'el', 'es', 'it', 'fr', 'de', 'pt', 'ja', 'zh', 'en', 'ru',
-    ]);
+  it('exposes the gpt-4o-mini-tts supported language set', () => {
+    // The full OpenAI speech-language set (57), not a tiny curated list.
+    expect(LANG_CODES.length).toBe(57);
+    for (const c of ['el', 'en', 'zh', 'es', 'fr', 'ar', 'hi', 'cy'] as const) {
+      expect(LANG_CODES).toContain(c);
+    }
+    // Every code has a display name…
+    for (const c of LANG_CODES) expect(LANG_NAME[c]).toBeTruthy();
+    // …and the list is ordered alphabetically by display name.
+    const names = LANG_CODES.map((c) => LANG_NAME[c]);
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
   });
 
   it('exposes the three TTS engines', () => {
