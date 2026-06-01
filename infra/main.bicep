@@ -46,8 +46,22 @@ param speechLocation string = 'westeurope'
 ])
 param ttsEngine string = 'azurespeech'
 
-@description('Apex domain hosted in Azure DNS for the public site. Empty disables the DNS zone.')
+@description('Domain this environment serves: the apex echolingo.audio (prod) or a subdomain like dev.echolingo.audio (dev). Empty disables custom domain + DNS.')
 param domainName string = 'echolingo.audio'
+
+@description('The authoritative public DNS zone. Both environments live under the same apex zone; a subdomain env points its CNAME here.')
+param dnsZoneName string = 'echolingo.audio'
+
+@description('Resource group of the DNS zone when it lives outside this environment (a subdomain env writes its CNAME into the apex owner\'s RG, e.g. rg-echolingo-prod). Empty = this environment owns the zone in its own RG.')
+param dnsZoneResourceGroupName string = ''
+
+// Does this environment serve the apex (and therefore own + delegate the zone),
+// or a subdomain (CNAME into the apex owner's existing zone)?
+var servesCustomDomain = !empty(domainName)
+var isApex = domainName == dnsZoneName
+var ownsApexZone = servesCustomDomain && isApex && empty(dnsZoneResourceGroupName)
+var subdomainLabel = isApex ? '' : first(split(domainName, '.'))
+var dnsZoneRg = empty(dnsZoneResourceGroupName) ? 'rg-echolingo-${environmentName}' : dnsZoneResourceGroupName
 
 var resourceToken = uniqueString(subscription().id, environmentName, location)
 var tags = {
@@ -175,7 +189,9 @@ module roleAssignments './modules/role-assignments.bicep' = {
   }
 }
 
-module dns './modules/dns.bicep' = if (!empty(domainName)) {
+// Only the apex environment creates + delegates the zone. A subdomain env reuses
+// the apex owner's existing zone (see dnsRecordSub below).
+module dns './modules/dns.bicep' = if (ownsApexZone) {
   scope: rg
   name: 'dns'
   params: {
@@ -195,9 +211,9 @@ module staticWebApp './modules/static-web-app.bicep' = {
   }
 }
 
-// Bind the apex + www custom domains to the Static Web App and create the DNS
-// records in the (delegated) Azure DNS zone. Only when a domain is configured.
-module customDomain './modules/custom-domain.bicep' = if (!empty(domainName)) {
+// Apex (prod): bind echolingo.audio + www to the SWA and create the apex A-alias
+// and www CNAME in the delegated zone. Unchanged from the original single-env path.
+module customDomain './modules/custom-domain.bicep' = if (servesCustomDomain && isApex) {
   scope: rg
   name: 'customDomain'
   params: {
@@ -209,6 +225,31 @@ module customDomain './modules/custom-domain.bicep' = if (!empty(domainName)) {
   }
   dependsOn: [
     dns
+  ]
+}
+
+// Subdomain (dev): no own zone. Write a single CNAME (dev -> SWA hostname) into the
+// apex owner's existing zone (another RG), then bind the subdomain to this env's SWA
+// with cname-delegation. No TXT-token bootstrap — validates in one azd up.
+module dnsRecordSub './modules/dns-record-sub.bicep' = if (servesCustomDomain && !isApex) {
+  scope: resourceGroup(dnsZoneRg)
+  name: 'dnsRecordSub'
+  params: {
+    zoneName: dnsZoneName
+    label: subdomainLabel
+    target: staticWebApp.outputs.defaultHostnameRaw
+  }
+}
+
+module customDomainSub './modules/custom-domain-sub.bicep' = if (servesCustomDomain && !isApex) {
+  scope: rg
+  name: 'customDomainSub'
+  params: {
+    staticWebAppName: staticWebApp.outputs.staticWebAppName
+    fullDomain: domainName
+  }
+  dependsOn: [
+    dnsRecordSub
   ]
 }
 
@@ -225,7 +266,7 @@ output FUNCTION_APP_URL string = 'https://${functionApp.outputs.defaultHostname}
 output WEB_URL string = staticWebApp.outputs.defaultHostname
 // The frontend calls relative /api/* (proxied by the SWA linked backend), so it no
 // longer needs the Function App URL baked in at build time.
-output DNS_ZONE_NAME string = empty(domainName) ? '' : dns.outputs.dnsZoneName
-output DNS_NAME_SERVERS array = empty(domainName) ? [] : dns.outputs.dnsNameServers
-output CUSTOM_DOMAIN_URL string = empty(domainName) ? '' : customDomain.outputs.apexUrl
-output CUSTOM_DOMAIN_WWW_URL string = empty(domainName) ? '' : customDomain.outputs.wwwUrl
+output DNS_ZONE_NAME string = ownsApexZone ? dns!.outputs.dnsZoneName : ''
+output DNS_NAME_SERVERS array = ownsApexZone ? dns!.outputs.dnsNameServers : []
+output CUSTOM_DOMAIN_URL string = !servesCustomDomain ? '' : (isApex ? customDomain!.outputs.apexUrl : 'https://${domainName}')
+output CUSTOM_DOMAIN_WWW_URL string = (servesCustomDomain && isApex) ? customDomain!.outputs.wwwUrl : ''

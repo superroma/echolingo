@@ -1,0 +1,77 @@
+name: CI/CD
+
+# Solo flow, no PRs:
+#   push to dev   -> test, then provision+deploy rg-echolingo-dev  (dev.echolingo.audio)
+#   push to main  -> test, then provision+deploy rg-echolingo-prod (echolingo.audio)
+# A failing test blocks that push's deploy.
+
+on:
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start Azurite
+        run: |
+          mkdir -p azurite-data
+          npx azurite --location ./azurite-data --silent --skipApiVersionCheck &
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:10000/devstoreaccount1 || true)
+            if [ "$code" = "400" ]; then break; fi
+            sleep 1
+          done
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build --workspace @echolingo/web
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_LOCATION: westeurope
+    steps:
+      - name: Select environment by branch
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "AZURE_ENV_NAME=prod"                     >> "$GITHUB_ENV"
+            echo "DOMAIN_NAME=echolingo.audio"             >> "$GITHUB_ENV"
+            echo "DNS_ZONE_RESOURCE_GROUP="                >> "$GITHUB_ENV"
+          else
+            echo "AZURE_ENV_NAME=dev"                      >> "$GITHUB_ENV"
+            echo "DOMAIN_NAME=dev.echolingo.audio"         >> "$GITHUB_ENV"
+            echo "DNS_ZONE_RESOURCE_GROUP=rg-echolingo-prod" >> "$GITHUB_ENV"
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build shared
+        run: npm run build --workspace @echolingo/shared
+      - name: Install azd
+        uses: Azure/setup-azd@v2
+      - name: Log in to Azure (federated identity)
+        run: |
+          azd auth login \
+            --client-id "$AZURE_CLIENT_ID" \
+            --federated-credential-provider github \
+            --tenant-id "$AZURE_TENANT_ID"
+      - name: Provision and deploy
+        run: azd up --no-prompt

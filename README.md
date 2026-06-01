@@ -170,15 +170,29 @@ azd env set LLM_MODEL_VERSION 2024-07-18
 azd provision
 ```
 
+### Environments
+
+Two azd environments share the single Echolingo subscription, each in its own resource group:
+
+| Branch | azd env | Resource group | Public domain |
+|---|---|---|---|
+| `dev` | `dev` | `rg-echolingo-dev` | `dev.echolingo.audio` |
+| `main` | `prod` | `rg-echolingo-prod` | `echolingo.audio` |
+
+`dev` is a full mirror of prod (same model deployments + quota). It serves a **subdomain**, so it doesn't own a DNS zone: a single `dev` `CNAME` is written into the prod-owned `echolingo.audio` zone and the binding validates via `cname-delegation` (no apex TXT-token bootstrap — `infra/modules/dns-record-sub.bicep` + `custom-domain-sub.bicep`). Tear it down anytime with `azd down -e dev`.
+
+The domain wiring is parameterised: `domainName` empty disables custom domain entirely; set it to the apex to own the zone, or to a subdomain (with `dnsZoneResourceGroupName` pointing at the apex owner's RG) to attach under the existing zone.
+
 ### CI deploys (GitHub Actions OIDC)
 
-One-time:
+A single workflow, `.github/workflows/ci-cd.yml`, runs `test` then `deploy` (deploy needs test to pass) on every push to `dev` or `main`. A branch-select step maps the branch to its `AZURE_ENV_NAME` + domain, then runs `azd up --no-prompt` under a federated (secretless) login.
+
+One Entra principal (`sp-echolingo-cicd`) deploys both environments — they're in one subscription. Bootstrap it once with `infra/bootstrap-cicd.sh` (idempotent): it creates the app + service principal, grants `Contributor` + `User Access Administrator` + `Storage Blob Data Contributor` at subscription scope, and adds federated credentials for the `dev` and `main` branches. The script prints the three repo secrets to set:
 
 ```bash
-azd pipeline config --provider github
+./infra/bootstrap-cicd.sh
+# then set AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID as repo secrets
 ```
-
-This registers federated credentials and adds the required secrets/vars to the repo. Pushes to `main` then trigger `.github/workflows/deploy.yml`, which runs `azd up --no-prompt`.
 
 ### Verification
 
