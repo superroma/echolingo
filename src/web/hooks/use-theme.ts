@@ -25,18 +25,27 @@ function applyClass(effective: EffectiveTheme) {
 }
 
 export function useTheme(): { effective: EffectiveTheme; toggle: () => void } {
-  const [mode, setMode] = useState<ThemeMode>('auto');
-  const [systemDark, setSystemDark] = useState(false);
-
-  useEffect(() => {
+  // Read the stored mode + OS preference SYNCHRONOUSLY on first render so the
+  // initial `effective` is already correct. Defaulting to 'auto'/light and
+  // correcting in a mount effect caused a theme-light -> real-theme flip on every
+  // load — which, because `.echo-row` is the only element with a background-color
+  // transition, showed up as the list items fading white->dark on a dark page.
+  const [mode, setMode] = useState<ThemeMode>(() => {
+    if (typeof window === 'undefined') return 'auto';
     try {
-      const stored = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
-      if (stored === 'light' || stored === 'dark' || stored === 'auto') setMode(stored);
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === 'light' || stored === 'dark' || stored === 'auto') return stored;
     } catch {
       /* ignore */
     }
+    return 'auto';
+  });
+  const [systemDark, setSystemDark] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches,
+  );
+
+  useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    setSystemDark(mq.matches);
     const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches);
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
