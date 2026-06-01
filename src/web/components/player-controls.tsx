@@ -15,6 +15,12 @@ export function PlayerControlsView({
   bilingual,
   showTranslation,
   onToggleTranslation,
+  status,
+  buffering,
+  offlineSaved,
+  canPlay,
+  ready,
+  onReload,
 }: {
   state: PlayerState;
   controls: Controls;
@@ -24,6 +30,12 @@ export function PlayerControlsView({
   bilingual: boolean;
   showTranslation: boolean;
   onToggleTranslation: () => void;
+  status: string;
+  buffering: boolean;
+  offlineSaved: boolean;
+  canPlay: boolean;
+  ready: boolean;
+  onReload: () => void;
 }) {
   return (
     <div>
@@ -34,7 +46,8 @@ export function PlayerControlsView({
           type="button"
           onClick={controls.prev}
           aria-label="Previous sentence"
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-paper-3 text-ink shadow-[var(--shadow-1)] transition active:scale-90"
+          disabled={!canPlay}
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-paper-3 text-ink shadow-[var(--shadow-1)] transition active:scale-90 disabled:opacity-40 disabled:active:scale-100"
         >
           <PrevIcon size={20} />
         </button>
@@ -42,7 +55,8 @@ export function PlayerControlsView({
           type="button"
           onClick={controls.toggle}
           aria-label={state.isPlaying ? 'Pause' : 'Play'}
-          className="flex h-[62px] w-[62px] items-center justify-center rounded-full bg-ink text-paper-2 shadow-[var(--shadow-2)] transition active:scale-90"
+          disabled={!canPlay}
+          className="flex h-[62px] w-[62px] items-center justify-center rounded-full bg-ink text-paper-2 shadow-[var(--shadow-2)] transition active:scale-90 disabled:opacity-40 disabled:active:scale-100"
         >
           {state.isPlaying ? <PauseIcon size={26} /> : <PlayIcon size={26} />}
         </button>
@@ -50,7 +64,8 @@ export function PlayerControlsView({
           type="button"
           onClick={controls.next}
           aria-label="Next sentence"
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-paper-3 text-ink shadow-[var(--shadow-1)] transition active:scale-90"
+          disabled={!canPlay}
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-paper-3 text-ink shadow-[var(--shadow-1)] transition active:scale-90 disabled:opacity-40 disabled:active:scale-100"
         >
           <NextIcon size={20} />
         </button>
@@ -90,6 +105,26 @@ export function PlayerControlsView({
               translation
             </button>
           </>
+        )}
+      </div>
+
+      <div className="mt-2.5 flex min-h-[18px] items-center justify-center gap-2 text-[12px] text-ink-mute">
+        {buffering && (
+          <span
+            className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-line border-t-accent"
+            aria-hidden
+          />
+        )}
+        {status && <span>{status}</span>}
+        {ready && offlineSaved && <span aria-live="polite">saved for offline ✓</span>}
+        {ready && (
+          <button
+            type="button"
+            onClick={onReload}
+            className="underline decoration-dotted underline-offset-2 hover:text-ink-soft"
+          >
+            re-download
+          </button>
         )}
       </div>
     </div>
