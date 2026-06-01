@@ -33,12 +33,12 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.startsWith('/api/')) return;
 
-  // Audio: cache-first, kept forever. Matches sentence MP3s on any host (prod
-  // blob storage or the local azurite emulator). Enables offline replay.
-  if (request.method === 'GET' && url.pathname.endsWith('.mp3')) {
-    event.respondWith(cacheFirstAudio(request));
-    return;
-  }
+  // IMPORTANT: never intercept sentence audio (*.mp3). These are cross-origin
+  // (blob storage / azurite), so a service worker can only ever hand back an
+  // *opaque* response — and a media element cannot decode an opaque response
+  // served from a SW/Cache (it fails with MEDIA_ERR_SRC_NOT_SUPPORTED), which
+  // silently breaks ALL playback. Let the browser load/stream media natively.
+  // (Offline audio needs CORS-enabled, non-opaque responses — tracked separately.)
 
   const isShell =
     request.destination === 'document' ||
@@ -61,22 +61,3 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(request).then((cached) => cached || Response.error())),
   );
 });
-
-async function cacheFirstAudio(request) {
-  const cache = await caches.open(AUDIO_CACHE);
-  const hit = await cache.match(request);
-  if (hit) return hit;
-  try {
-    const res = await fetch(request);
-    // Store full responses (ok same-origin/cors, or cross-origin opaque). Skip
-    // 206 partials so we never persist half a file.
-    if (res && res.status !== 206 && (res.ok || res.type === 'opaque')) {
-      cache.put(request, res.clone()).catch(() => {});
-    }
-    return res;
-  } catch (err) {
-    const fallback = await cache.match(request);
-    if (fallback) return fallback;
-    throw err;
-  }
-}
