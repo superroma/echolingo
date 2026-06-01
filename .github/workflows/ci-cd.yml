@@ -18,8 +18,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -64,8 +64,8 @@ jobs:
             echo "DOMAIN_NAME=dev.echolingo.audio"         >> "$GITHUB_ENV"
             echo "DNS_ZONE_RESOURCE_GROUP=rg-echolingo-prod" >> "$GITHUB_ENV"
           fi
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
