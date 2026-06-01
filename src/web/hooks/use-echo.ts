@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { Echo } from '@echolingo/shared/types';
 import { getEcho, type GetEchoResult } from '../lib/api';
+import { saveEcho as saveEchoToCache, loadEcho as loadEchoFromCache } from '../lib/offline-echo';
 
 export type EchoState =
   | { kind: 'loading' }
@@ -46,27 +47,59 @@ export function decidePoll(result: GetEchoResult, prevErrors: number): PollDecis
   return { state: { kind: 'ok', echo: result.echo }, continuePolling: generating, consecutiveErrors: 0 };
 }
 
-export function useEcho(id: string, reloadToken = 0): EchoState {
+export interface UseEchoIO {
+  getEcho: (id: string) => Promise<GetEchoResult>;
+  saveEcho: (echo: Echo) => void;
+  loadEcho: (id: string) => Echo | null;
+}
+
+const defaultIO: UseEchoIO = {
+  getEcho,
+  saveEcho: saveEchoToCache,
+  loadEcho: loadEchoFromCache,
+};
+
+export function useEcho(id: string, reloadToken = 0, io: UseEchoIO = defaultIO): EchoState {
   const [state, setState] = useState<EchoState>({ kind: 'loading' });
 
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     let consecutiveErrors = 0;
+    let servedOk = false; // showed a good echo (live or cached) — don't clobber it with an error card
 
     async function tick() {
       let result: GetEchoResult;
       try {
-        result = await getEcho(id);
+        result = await io.getEcho(id);
       } catch {
-        // fetch rejected (network/CORS) — treat as a transient error.
         result = { kind: 'error', status: 0, message: 'network error' };
       }
       if (cancelled) return;
 
+      // Keep a copy for offline replay once the script (and its URLs) exist.
+      if (result.kind === 'found' && result.echo.sentences.length > 0) {
+        io.saveEcho(result.echo);
+      }
+
       const decision = decidePoll(result, consecutiveErrors);
       consecutiveErrors = decision.consecutiveErrors;
-      if (decision.state) setState(decision.state);
+
+      // Network down and nothing good shown yet — fall back to the cached copy.
+      if (result.kind === 'error' && !servedOk) {
+        const cached = io.loadEcho(id);
+        if (cached) {
+          setState({ kind: 'ok', echo: cached });
+          servedOk = true;
+        }
+      }
+
+      if (decision.state) {
+        const isErrorCard = decision.state.kind === 'error';
+        if (!(servedOk && isErrorCard)) setState(decision.state);
+        if (decision.state.kind === 'ok') servedOk = true;
+      }
+
       if (decision.continuePolling && !cancelled) {
         timer = setTimeout(tick, POLL_INTERVAL_MS);
       }
@@ -77,7 +110,7 @@ export function useEcho(id: string, reloadToken = 0): EchoState {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [id, reloadToken]);
+  }, [id, reloadToken, io]);
 
   return state;
 }
