@@ -4,7 +4,7 @@ import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { useRouter } from 'next/navigation';
 import { LANG_NAME, cefr } from '@echolingo/shared/types';
 import type { Echo } from '../hooks/use-echoes';
-import { PlayIcon } from './icons';
+import { PlayIcon, TrashIcon } from './icons';
 
 export function EchoesList({
   echoes,
@@ -19,9 +19,9 @@ export function EchoesList({
   return (
     <section className="mt-[26px] lg:mt-0">
       <h2 className="text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-mute">your echoes</h2>
-      <ul className="mt-1 pb-7">
-        {echoes.map((echo) => (
-          <EchoRow key={echo.id} echo={echo} onRemove={onRemove} />
+      <ul className="mt-1 flex flex-col pb-7">
+        {echoes.map((echo, i) => (
+          <EchoRow key={echo.id} echo={echo} first={i === 0} onRemove={onRemove} />
         ))}
       </ul>
     </section>
@@ -39,12 +39,13 @@ function progressOf(echo: Echo): number {
   }
 }
 
-// Swipe geometry: REVEAL is the resting width of the exposed Delete action;
-// dragging past COMMIT and releasing deletes outright (iOS-style full swipe).
-const REVEAL = 84;
+// Swipe geometry: REVEAL is the resting width of the exposed Delete action (it
+// matches the action's own width so the open row sits flush against it).
+// Dragging past COMMIT and releasing deletes outright (iOS-style full swipe).
+const REVEAL = 96;
 const COMMIT = 150;
 
-function EchoRow({ echo, onRemove }: { echo: Echo; onRemove: (id: string) => void }) {
+function EchoRow({ echo, first, onRemove }: { echo: Echo; first: boolean; onRemove: (id: string) => void }) {
   const router = useRouter();
   const p = progressOf(echo);
   const done = p >= 1;
@@ -76,7 +77,7 @@ function EchoRow({ echo, onRemove }: { echo: Echo; onRemove: (id: string) => voi
   }
 
   function onPointerDown(e: ReactPointerEvent) {
-    if (e.pointerType !== 'touch') return; // desktop keeps the hover × button
+    if (e.pointerType !== 'touch') return; // desktop keeps the hover trash button
     startRef.current = { x: e.clientX, y: e.clientY };
     swipedRef.current = false;
     axisRef.current = 'none';
@@ -128,47 +129,65 @@ function EchoRow({ echo, onRemove }: { echo: Echo; onRemove: (id: string) => voi
     // swallowed; a fresh tap resets it in onPointerDown.
   }
 
+  // Inline transform only when displaced — left undefined at rest so the CSS
+  // hover/focus lift (translateY) can take over without an inline override.
+  const transform = exiting
+    ? 'translateX(-100%)'
+    : open
+      ? `translateX(-${REVEAL}px)`
+      : dx !== 0
+        ? `translateX(${dx}px)`
+        : undefined;
+
   return (
-    <li className="group relative overflow-hidden border-b border-line-soft last:border-b-0">
-      {/* Delete action, revealed as the foreground slides left (touch) */}
-      <div className="absolute inset-y-0 right-0 flex items-stretch">
+    <li className="group relative rounded-[var(--radius-lg)]">
+      {/* terracotta-tinted plane revealed as the foreground slides left */}
+      <div
+        className={'echo-reveal absolute inset-0 z-[1] flex items-center justify-end overflow-hidden' + (open ? ' is-open' : '')}
+      >
         <button
           type="button"
           onClick={remove}
-          style={{ width: REVEAL }}
           tabIndex={open ? 0 : -1}
           aria-hidden={!open}
           aria-label="Delete echo"
-          className="flex items-center justify-center bg-[#e5484d] text-[13px] font-semibold text-white"
+          style={{ width: REVEAL }}
+          className="flex h-full flex-col items-center justify-center gap-1.5 text-[color:var(--danger-ink)]"
         >
-          Delete
+          <span className="echo-del-chip flex h-[34px] w-[34px] items-center justify-center rounded-full">
+            <TrashIcon size={18} />
+          </span>
+          <span className="text-[11.5px] font-semibold tracking-[0.02em]">Delete</span>
         </button>
       </div>
 
-      {/* Foreground row — translates on swipe, opaque so it masks the action */}
+      {/* foreground row — opaque, translates on swipe */}
       <div
-        className="relative flex items-center gap-3.5 bg-paper py-4"
+        className={
+          'echo-row relative z-[2] flex items-center gap-3.5 bg-paper px-3 py-[13px]' +
+          (first ? ' is-first' : '') +
+          (open || dragging || exiting ? ' is-active' : '') +
+          (open ? ' is-open' : '') +
+          (exiting ? ' is-exiting' : '')
+        }
+        data-dragging={dragging ? 'true' : undefined}
         style={{
-          transform: exiting ? 'translateX(-100%)' : `translateX(${dx}px)`,
-          opacity: exiting ? 0 : 1,
-          transition: dragging ? 'none' : 'transform 220ms ease, opacity 200ms ease',
-          touchAction: 'pan-y',
+          transform,
+          opacity: exiting ? 0 : undefined,
+          transition: dragging ? 'none' : exiting ? 'transform 0.22s ease, opacity 0.2s ease' : undefined,
         }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endSwipe}
         onPointerCancel={endSwipe}
       >
-        {/* Stretched, keyboard-accessible navigation target over the whole row */}
+        {/* stretched, keyboard-accessible navigation target over the whole row */}
         <button
           type="button"
           onClick={navigate}
           aria-label={`Open echo: ${echo.topic}`}
-          className="peer absolute inset-0 z-10"
+          className="absolute inset-0 z-10 rounded-[var(--radius-lg)]"
         />
-        {/* Press / hover feedback (reacts to the stretched button via peer-*) */}
-        <span className="pointer-events-none absolute inset-0 transition-colors peer-hover:bg-paper-2 peer-active:bg-line-soft" />
-
         <span className="pointer-events-none relative flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-line bg-paper-3 text-ink shadow-[var(--shadow-1)]">
           {partial && <ProgressRing p={p} />}
           <PlayIcon size={18} />
@@ -194,10 +213,10 @@ function EchoRow({ echo, onRemove }: { echo: Echo; onRemove: (id: string) => voi
             e.stopPropagation();
             if (confirm('Remove this echo from your list?')) remove();
           }}
-          className="relative z-20 rounded p-1 text-ink-mute opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
           aria-label="Remove echo"
+          className="echo-desk-del relative z-20 flex h-[34px] w-[34px] flex-shrink-0 scale-90 items-center justify-center rounded-full text-[color:var(--danger-ink)] opacity-0 transition-[opacity,transform] duration-150 group-hover:scale-100 group-hover:opacity-100 focus-visible:scale-100 focus-visible:opacity-100"
         >
-          ×
+          <TrashIcon size={16} />
         </button>
       </div>
     </li>
