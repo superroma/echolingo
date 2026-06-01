@@ -30,9 +30,10 @@ async function runWithCap(items: string[], cap: number, fn: (u: string) => Promi
 }
 
 // Module-level so the default keeps a stable identity across renders (the effect
-// depends on `fetcher`). no-cors warms the service-worker audio cache; the opaque
-// response is fine for <audio> playback.
-const defaultFetcher = (url: string): Promise<unknown> => fetch(url, { mode: 'no-cors' });
+// depends on `fetcher`). CORS mode (storage sends CORS headers; the <audio> uses
+// crossorigin="anonymous") yields a NON-opaque, readable, Range-capable response
+// the service worker can cache and replay offline — opaque responses can't be.
+const defaultFetcher = (url: string): Promise<unknown> => fetch(url, { mode: 'cors' });
 
 /**
  * Eagerly cache every ready sentence's audio (all of it, not a sliding window) so

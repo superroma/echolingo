@@ -384,7 +384,11 @@ function ExistingEcho({ id }: { id: string }) {
   return (
     <div className="flex h-[100dvh] flex-col">
       <AppBar title={echo.params.topic} showNew />
-      <audio ref={player.audioRef as RefObject<HTMLAudioElement>} preload="auto" />
+      <audio
+        ref={player.audioRef as RefObject<HTMLAudioElement>}
+        preload="auto"
+        crossOrigin="anonymous"
+      />
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-2xl">
           {shared && <ShareContextStrip echo={echo} />}
