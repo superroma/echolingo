@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PlaylistEntry } from '@echolingo/shared/types';
+import { evictAudioUrl } from '../lib/audio-cache';
 
 // useLayoutEffect on the client (runs before the passive src effect, so a
 // playlist swap is remapped before any stale reload), useEffect on the server
@@ -69,6 +70,10 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string, generating
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentChunk, setCurrentChunk] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const isPlayingRef = useRef(isPlaying);
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
   const [buffering, setBuffering] = useState(false);
   const [speed, setSpeedState] = useState(() => (typeof window !== 'undefined' ? loadSpeed() : 1));
 
@@ -130,6 +135,25 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string, generating
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('ended', onEnded);
     };
+  }, [playlist.length]);
+
+  // Auto-heal a corrupt/partial cached chunk: on a media error, evict that one
+  // URL from the cache and reload it once from the network before giving up.
+  const healedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onError = () => {
+      const src = audio.currentSrc || audio.src;
+      if (!src || healedRef.current.has(src)) return; // retry each src at most once
+      healedRef.current.add(src);
+      void evictAudioUrl(src).then(() => {
+        audio.load();
+        if (isPlayingRef.current) void audio.play().catch(() => {});
+      });
+    };
+    audio.addEventListener('error', onError);
+    return () => audio.removeEventListener('error', onError);
   }, [playlist.length]);
 
   useEffect(() => {

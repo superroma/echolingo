@@ -17,6 +17,16 @@ export async function clearEchoAudio(
   );
 }
 
+/** Evict a single cached audio URL — used to recover from a corrupt chunk. */
+export async function evictAudioUrl(url: string, cacheStorage: CacheStorage = caches): Promise<void> {
+  try {
+    const cache = await cacheStorage.open(AUDIO_CACHE);
+    await cache.delete(url);
+  } catch {
+    // cache unavailable — the network reload below still recovers
+  }
+}
+
 /** Ask the browser to keep our caches across eviction. Best-effort. */
 export async function persistStorage(): Promise<boolean> {
   try {
