@@ -38,7 +38,11 @@ export class BlobAudioStorage implements AudioStorage {
   }
 
   async ensureContainer(): Promise<void> {
-    await this.container.createIfNotExists();
+    // Audio is served to the browser by stable, public URLs (no SAS), so the
+    // container must allow anonymous blob read. In prod the Bicep storage module
+    // already sets publicAccess: 'Blob'; setting it here too makes local azurite
+    // (which never sees that Bicep) match prod, so audio actually plays in dev.
+    await this.container.createIfNotExists({ access: 'blob' });
   }
 
   async put(
