@@ -12,6 +12,8 @@
     "ttsModelName": { "value": "${TTS_MODEL_NAME=gpt-4o-mini-tts}" },
     "ttsModelVersion": { "value": "${TTS_MODEL_VERSION=2025-12-15}" },
     "deploymentQuotaTpm": { "value": "${DEPLOYMENT_QUOTA_TPM=150}" },
-    "ttsQuotaTpm": { "value": "${TTS_QUOTA_TPM=50}" }
+    "ttsQuotaTpm": { "value": "${TTS_QUOTA_TPM=50}" },
+    "speechLocation": { "value": "${AZURE_SPEECH_LOCATION=westeurope}" },
+    "ttsEngine": { "value": "${TTS_ENGINE_CHOICE=azurespeech}" }
   }
 }

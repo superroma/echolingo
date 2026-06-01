@@ -36,6 +36,16 @@ param deploymentQuotaTpm int = 150
 @description('Quota in thousand tokens per minute for the TTS deployment.')
 param ttsQuotaTpm int = 50
 
+@description('Location for the Azure AI Speech resource (the alternative, fixed-voice TTS engine).')
+param speechLocation string = 'westeurope'
+
+@description('Which TTS engine the API uses at runtime: openai (gpt-4o-mini-tts) or azurespeech (fixed neural voices).')
+@allowed([
+  'openai'
+  'azurespeech'
+])
+param ttsEngine string = 'azurespeech'
+
 @description('Apex domain hosted in Azure DNS for the public site. Empty disables the DNS zone.')
 param domainName string = 'echolingo.audio'
 
@@ -113,6 +123,18 @@ module openaiTts './modules/openai.bicep' = {
   }
 }
 
+// Azure AI Speech — the fixed-voice TTS engine, selectable via ttsEngine.
+module speech './modules/speech.bicep' = {
+  scope: rg
+  name: 'speech'
+  params: {
+    environmentName: environmentName
+    location: speechLocation
+    tags: tags
+    principalId: principalId
+  }
+}
+
 module functionApp './modules/function-app.bicep' = {
   scope: rg
   name: 'functionApp'
@@ -133,6 +155,9 @@ module functionApp './modules/function-app.bicep' = {
     openAiLlmDeployment: llmModelName
     openAiTtsEndpoint: openaiTts.outputs.endpoint
     openAiTtsDeployment: ttsModelName
+    ttsEngine: ttsEngine
+    speechRegion: speech.outputs.region
+    speechResourceId: speech.outputs.resourceId
   }
 }
 
@@ -144,6 +169,7 @@ module roleAssignments './modules/role-assignments.bicep' = {
     storageAccountName: storage.outputs.storageAccountName
     openAiAccountName: openai.outputs.accountName
     openAiTtsAccountName: openaiTts.outputs.accountName
+    speechAccountName: speech.outputs.accountName
     deployerPrincipalId: principalId
   }
 }

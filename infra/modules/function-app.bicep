@@ -49,6 +49,15 @@ param openAiTtsDeployment string
 @description('API version for the TTS (/audio/speech) endpoint — gpt-4o-mini-tts + instructions need a 2025 preview.')
 param openAiTtsApiVersion string = '2025-04-01-preview'
 
+@description('Runtime TTS engine: openai | azurespeech.')
+param ttsEngine string = 'openai'
+
+@description('Azure AI Speech region (for the azurespeech engine).')
+param speechRegion string
+
+@description('Azure AI Speech resource id (for managed-identity auth).')
+param speechResourceId string
+
 var planName = 'plan-echolingo-${environmentName}'
 var functionAppName = 'func-echolingo-${environmentName}'
 
@@ -119,8 +128,10 @@ module functionApp 'br/public:avm/res/web/site:0.13.0' = {
       AZURE_OPENAI_TTS_DEPLOYMENT: openAiTtsDeployment
       AZURE_OPENAI_API_VERSION: '2024-08-01-preview'
       AZURE_OPENAI_TTS_API_VERSION: openAiTtsApiVersion
+      AZURE_SPEECH_REGION: speechRegion
+      AZURE_SPEECH_RESOURCE_ID: speechResourceId
       LLM_ENGINE: 'openai'
-      TTS_ENGINE: 'openai'
+      TTS_ENGINE: ttsEngine
       RATE_LIMIT_PER_DAY: '20'
     }
   }

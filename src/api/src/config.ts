@@ -5,7 +5,15 @@ export const DEFAULT_SCRIPT_GEN_QUEUE = 'script-gen';
 export const DEFAULT_TTS_SENTENCE_QUEUE = 'tts-sentence';
 
 export type LlmEngineName = 'mock' | 'openai';
-export type TtsEngineName = 'mock' | 'openai';
+export type TtsEngineName = 'mock' | 'openai' | 'azurespeech';
+
+export interface SpeechConfig {
+  region: string;
+  /** Full ARM resource id of the Speech resource (for managed-identity auth). */
+  resourceId: string;
+  /** Optional single voice override for all languages. */
+  voice?: string;
+}
 
 export interface OpenAiDirectConfig {
   kind: 'direct';
@@ -44,6 +52,7 @@ export interface Config extends StorageConfig {
   ttsEngine: TtsEngineName;
   rateLimitPerDay: number;
   openai?: OpenAiConfig;
+  speech?: SpeechConfig;
   appInsightsConnectionString?: string;
 }
 
@@ -77,6 +86,7 @@ export function loadConfig(): Config {
 
   const ttsEngine: TtsEngineName =
     ttsEnvChoice === 'mock' ? 'mock' :
+    ttsEnvChoice === 'azurespeech' ? 'azurespeech' :
     ttsEnvChoice === 'openai' ? 'openai' :
     hasOpenAi ? 'openai' : 'mock';
 
@@ -104,6 +114,17 @@ export function loadConfig(): Config {
     };
   }
 
+  const speechRegion = process.env.AZURE_SPEECH_REGION;
+  const speechResourceId = process.env.AZURE_SPEECH_RESOURCE_ID;
+  const speech: SpeechConfig | undefined =
+    speechRegion && speechResourceId
+      ? { region: speechRegion, resourceId: speechResourceId, voice: process.env.AZURE_SPEECH_VOICE }
+      : undefined;
+
+  if (ttsEngine === 'azurespeech' && !speech) {
+    throw new Error('AZURE_SPEECH_REGION and AZURE_SPEECH_RESOURCE_ID are required when TTS_ENGINE is azurespeech');
+  }
+
   return {
     storageConnectionString: useAzureStorage ? undefined : process.env.AzureWebJobsStorage,
     blobEndpoint,
@@ -117,6 +138,7 @@ export function loadConfig(): Config {
     ttsEngine,
     rateLimitPerDay: parseInt(process.env.RATE_LIMIT_PER_DAY ?? '20', 10),
     openai,
+    speech,
     appInsightsConnectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
   };
 }

@@ -34,6 +34,26 @@ describe('loadConfig', () => {
     expect(cfg.ttsSentenceQueue).toBe(DEFAULT_TTS_SENTENCE_QUEUE);
   });
 
+  it('selects azurespeech and parses the speech config from env', () => {
+    process.env.AzureWebJobsStorage = 'UseDevelopmentStorage=true';
+    process.env.TTS_ENGINE = 'azurespeech';
+    process.env.AZURE_SPEECH_REGION = 'westeurope';
+    process.env.AZURE_SPEECH_RESOURCE_ID =
+      '/subscriptions/x/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/spch';
+    const cfg = loadConfig();
+    expect(cfg.ttsEngine).toBe('azurespeech');
+    expect(cfg.speech?.region).toBe('westeurope');
+    expect(cfg.speech?.resourceId).toContain('/accounts/spch');
+  });
+
+  it('throws when azurespeech is selected without speech env', () => {
+    process.env.AzureWebJobsStorage = 'UseDevelopmentStorage=true';
+    process.env.TTS_ENGINE = 'azurespeech';
+    delete process.env.AZURE_SPEECH_REGION;
+    delete process.env.AZURE_SPEECH_RESOURCE_ID;
+    expect(() => loadConfig()).toThrow(/AZURE_SPEECH/);
+  });
+
   it('honors env overrides for container and queue names', () => {
     process.env.AzureWebJobsStorage = 'UseDevelopmentStorage=true';
     process.env.ECHOES_CONTAINER = 'custom-echoes';

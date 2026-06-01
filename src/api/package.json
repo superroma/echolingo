@@ -17,6 +17,7 @@
     "@azure/storage-blob": "^12.25.0",
     "@azure/storage-queue": "^12.24.0",
     "applicationinsights": "^3.4.0",
+    "microsoft-cognitiveservices-speech-sdk": "^1.50.0",
     "openai": "^4.68.0"
   },
   "devDependencies": {

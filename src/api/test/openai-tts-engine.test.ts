@@ -58,27 +58,22 @@ describe('OpenAiTtsEngine', () => {
   });
 
   it('adds language-steering instructions for gpt-4o-mini-tts, omits for classic tts', async () => {
-    const captured: { body: { instructions?: string } | null } = { body: null };
+    const bodies: Array<Record<string, unknown>> = [];
     server.use(
       http.post('https://api.openai.com/v1/audio/speech', async ({ request }) => {
-        captured.body = (await request.json()) as typeof captured.body;
+        bodies.push((await request.json()) as Record<string, unknown>);
         return new HttpResponse(MP3, { status: 200 });
       }),
     );
-    const mini = new OpenAiTtsEngine({
-      auth: { kind: 'direct', apiKey: 'sk-test' },
-      model: 'gpt-4o-mini-tts',
+    await new OpenAiTtsEngine({ auth: { kind: 'direct', apiKey: 'sk-test' }, model: 'gpt-4o-mini-tts' }).synthesize(
+      { text: 'Καλημέρα.', lang: 'el' },
+    );
+    await new OpenAiTtsEngine({ auth: { kind: 'direct', apiKey: 'sk-test' }, model: 'tts-1' }).synthesize({
+      text: 'Hi',
+      lang: 'en',
     });
-    await mini.synthesize({ text: 'Καλημέρα.', lang: 'el' });
-    expect(captured.body?.instructions).toMatch(/Greek/);
-
-    captured.body = null;
-    const legacy = new OpenAiTtsEngine({
-      auth: { kind: 'direct', apiKey: 'sk-test' },
-      model: 'tts-1',
-    });
-    await legacy.synthesize({ text: 'Hi', lang: 'en' });
-    expect(captured.body?.instructions).toBeUndefined();
+    expect(bodies[0]?.instructions).toMatch(/Greek/);
+    expect(bodies[1]?.instructions).toBeUndefined();
   });
 
   it('retries on 5xx and succeeds', async () => {

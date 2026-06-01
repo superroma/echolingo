@@ -13,7 +13,9 @@ export interface TtsSynthesizeResult {
   durationSec: number;
 }
 
+// 'azurespeech' is a runtime engine identifier; it is intentionally NOT part of
+// the client-facing TTS_ENGINES enum (which describes requested EchoParams).
 export interface TtsEngine {
-  readonly name: TtsEngineName | 'mock';
+  readonly name: TtsEngineName | 'mock' | 'azurespeech';
   synthesize(req: TtsSynthesizeRequest): Promise<TtsSynthesizeResult>;
 }

@@ -14,6 +14,7 @@ import { BlobRateLimitStore } from './storage/blob-rate-limit-store.js';
 import { QueueClient } from './queue/queue-client.js';
 import { OpenAiLlmEngine } from './llm/openai-llm-engine.js';
 import { OpenAiTtsEngine } from './tts/openai-tts-engine.js';
+import { AzureSpeechTtsEngine } from './tts/azure-speech-tts-engine.js';
 import { createTelemetry, type Telemetry } from './lib/telemetry.js';
 
 export interface RateLimitStore {
@@ -65,6 +66,15 @@ function buildLlm(config: Config): LlmEngine {
 }
 
 function buildTts(config: Config): TtsEngine {
+  if (config.ttsEngine === 'azurespeech') {
+    if (!config.speech) return new MockTtsEngine();
+    return new AzureSpeechTtsEngine({
+      region: config.speech.region,
+      resourceId: config.speech.resourceId,
+      tokenProvider: azureTokenProvider(),
+      voice: config.speech.voice,
+    });
+  }
   if (config.ttsEngine !== 'openai' || !config.openai) return new MockTtsEngine();
   if (config.openai.kind === 'azure') {
     return new OpenAiTtsEngine({
