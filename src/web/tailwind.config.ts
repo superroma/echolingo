@@ -2,6 +2,10 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
+  // Only apply hover:/group-hover: styles on devices that actually hover. Without
+  // this, iOS treats the first tap as a hover (revealing group-hover content like
+  // the desktop delete button) and swallows the tap — so a row needed two taps.
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       colors: {

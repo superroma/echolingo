@@ -197,6 +197,13 @@ input[type='range'].range-accent::-moz-range-thumb {
 }
 
 /* desktop hover-delete: a quiet round trash button, terracotta-tinted */
+/* Desktop hover-delete only — on touch, swipe-left reveals Delete instead, and a
+   tappable trash button would steal the first tap / clutter the row. */
+@media (hover: none) {
+  .echo-desk-del {
+    display: none;
+  }
+}
 .echo-desk-del {
   background: color-mix(in oklab, var(--danger-ink) 10%, var(--paper-2));
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--danger-ink) 20%, transparent);

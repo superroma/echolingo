@@ -81,7 +81,9 @@ function EchoRow({ echo, first, onRemove }: { echo: Echo; first: boolean; onRemo
     startRef.current = { x: e.clientX, y: e.clientY };
     swipedRef.current = false;
     axisRef.current = 'none';
-    setDragging(true);
+    // Don't flag dragging yet — a plain tap should keep its :active press
+    // feedback (dragging suppresses it). We only start "dragging" once the finger
+    // actually moves horizontally (in onPointerMove).
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
@@ -96,9 +98,10 @@ function EchoRow({ echo, first, onRemove }: { echo: Echo; first: boolean; onRemo
       if (axisRef.current === 'v') {
         // vertical scroll — bow out and let the page handle it
         startRef.current = null;
-        setDragging(false);
         return;
       }
+      // horizontal drag begins → suppress transitions for a smooth swipe
+      setDragging(true);
     }
     swipedRef.current = true;
     const base = open ? -REVEAL : 0;
