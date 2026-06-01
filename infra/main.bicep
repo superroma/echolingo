@@ -79,6 +79,7 @@ module storage './modules/storage.bicep' = {
     resourceToken: resourceToken
     location: location
     tags: tags
+    domainName: domainName
   }
 }
 

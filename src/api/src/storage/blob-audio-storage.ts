@@ -13,9 +13,13 @@ export interface BlobAudioStorageOptions {
 }
 
 export class BlobAudioStorage implements AudioStorage {
+  private readonly service: BlobServiceClient;
   private readonly container: ContainerClient;
   private readonly containerName: string;
   private readonly accountUrl: string;
+  /** azurite (connection-string) mode: set CORS in code since there's no Bicep. */
+  private readonly isLocal: boolean;
+  private corsEnsured = false;
 
   constructor(connStringOrOpts: string | BlobAudioStorageOptions, containerName?: string) {
     let opts: BlobAudioStorageOptions;
@@ -32,6 +36,8 @@ export class BlobAudioStorage implements AudioStorage {
     } else {
       throw new Error('BlobAudioStorage requires connectionString or endpoint');
     }
+    this.service = service;
+    this.isLocal = !!opts.connectionString;
     this.container = service.getContainerClient(opts.containerName);
     this.containerName = opts.containerName;
     this.accountUrl = service.url.replace(/\/$/, '');
@@ -43,6 +49,33 @@ export class BlobAudioStorage implements AudioStorage {
     // already sets publicAccess: 'Blob'; setting it here too makes local azurite
     // (which never sees that Bicep) match prod, so audio actually plays in dev.
     await this.container.createIfNotExists({ access: 'blob' });
+    await this.ensureCors();
+  }
+
+  /**
+   * Local-only: mirror the Bicep CORS rule onto azurite so the browser can fetch
+   * audio with crossorigin="anonymous" (non-opaque, Range-capable responses the
+   * service worker can cache for offline). Prod gets CORS from Bicep; skip it
+   * there to avoid fighting IaC. Runs once, best-effort.
+   */
+  private async ensureCors(): Promise<void> {
+    if (!this.isLocal || this.corsEnsured) return;
+    this.corsEnsured = true;
+    try {
+      await this.service.setProperties({
+        cors: [
+          {
+            allowedOrigins: '*',
+            allowedMethods: 'GET,HEAD,OPTIONS',
+            allowedHeaders: '*',
+            exposedHeaders: 'Content-Length,Content-Range,Accept-Ranges,Content-Type',
+            maxAgeInSeconds: 3600,
+          },
+        ],
+      });
+    } catch {
+      // azurite CORS is best-effort; never block audio writes on it.
+    }
   }
 
   async put(
