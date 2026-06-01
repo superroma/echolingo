@@ -24,6 +24,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Web build + workspace imports resolve @echolingo/shared via its dist/ exports,
+      # which is gitignored — build it first (same as predev and the deploy job).
+      - name: Build shared
+        run: npm run build --workspace @echolingo/shared
       - name: Start Azurite
         run: |
           mkdir -p azurite-data
