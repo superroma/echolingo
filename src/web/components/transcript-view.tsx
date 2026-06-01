@@ -97,26 +97,36 @@ function SentenceRow({
   onJump: () => void;
   attachRef?: (el: HTMLLIElement | null) => void;
 }) {
+  const pending = sentence.status === 'pending';
+  const playable = sentence.status === 'ready';
   const targetTone = isCurrent ? 'text-ink' : isPast ? 'text-ink-soft' : 'text-ink-mute';
   return (
     <li
       ref={attachRef}
-      onClick={onJump}
+      data-status={sentence.status}
+      onClick={playable ? onJump : undefined}
+      aria-disabled={!playable}
       className={
-        'my-0.5 cursor-pointer rounded-[16px] px-4 py-4 transition ' +
+        'my-0.5 rounded-[16px] px-4 py-4 transition ' +
+        (playable ? 'cursor-pointer ' : 'cursor-default ') +
+        (pending ? 'motion-safe:animate-pulse ' : '') +
         (isCurrent
           ? 'bg-[color-mix(in_srgb,var(--accent)_12%,var(--paper-2))] shadow-[inset_3px_0_0_var(--accent)]'
           : '')
       }
     >
-      <p className={`font-serif text-[calc(25px*var(--fs-scale))] leading-[1.32] tracking-[-0.01em] ${targetTone}`}>
+      <p
+        className={`font-serif text-[calc(25px*var(--fs-scale))] leading-[1.32] tracking-[-0.01em] ${
+          pending ? 'text-ink-mute' : targetTone
+        }`}
+      >
         {sentence.gr}
       </p>
       {showNative && (
         <p
           className={
             'mt-2 font-sans text-[calc(16px*var(--fs-scale))] leading-[1.4] ' +
-            (isCurrent ? 'text-ink-soft' : 'text-ink-mute')
+            (isCurrent && !pending ? 'text-ink-soft' : 'text-ink-mute')
           }
         >
           {sentence.native}

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { TranscriptView } from './transcript-view.js';
 import type { Echo } from '@echolingo/shared/types';
 
@@ -60,6 +60,54 @@ function Player({ current }: { current: number }) {
 // parentElement — the non-scrolling max-w-2xl wrapper — so nothing happens and
 // the current line drifts below the fold. Expected to FAIL until scrollBox()
 // targets the nearest scrollable ancestor.
+function mixedEcho(): Echo {
+  const e = readyEcho(3);
+  e.status = 'generating_audio';
+  e.sentences[0]!.status = 'ready';
+  e.sentences[1]!.status = 'pending';
+  e.sentences[2]!.status = 'failed';
+  return e;
+}
+
+function renderMixed(onJump: (i: number) => void = () => {}) {
+  return render(
+    <div style={{ overflowY: 'auto' }}>
+      <div>
+        <TranscriptView echo={mixedEcho()} currentSentence={0} showNative onJump={onJump} />
+      </div>
+    </div>,
+  );
+}
+
+describe('TranscriptView marks sentences by readiness', () => {
+  beforeEach(() => {
+    HTMLElement.prototype.scrollBy = vi.fn();
+    HTMLElement.prototype.scrollTo = vi.fn();
+    HTMLElement.prototype.scrollIntoView = vi.fn();
+  });
+
+  it('jumps when a ready sentence is tapped', () => {
+    const onJump = vi.fn();
+    renderMixed(onJump);
+    fireEvent.click(screen.getByText('target 0'));
+    expect(onJump).toHaveBeenCalledWith(0);
+  });
+
+  it('does not jump when a pending sentence is tapped', () => {
+    const onJump = vi.fn();
+    renderMixed(onJump);
+    fireEvent.click(screen.getByText('target 1'));
+    expect(onJump).not.toHaveBeenCalled();
+  });
+
+  it('tags each line with its status', () => {
+    renderMixed();
+    expect(screen.getByText('target 0').closest('li')!.getAttribute('data-status')).toBe('ready');
+    expect(screen.getByText('target 1').closest('li')!.getAttribute('data-status')).toBe('pending');
+    expect(screen.getByText('target 2').closest('li')!.getAttribute('data-status')).toBe('failed');
+  });
+});
+
 describe('TranscriptView keeps the current sentence in view', () => {
   const scrollIntoView = vi.fn();
   beforeEach(() => {
