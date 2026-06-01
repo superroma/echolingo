@@ -47,12 +47,27 @@ export function buildPlaylist(echo: Echo): PlaylistEntry[] {
 }
 
 /**
- * The playlist to actually play. When a bilingual echo has its translation
- * turned off, the native-language audio is dropped (not just hidden in the
- * transcript) so it isn't read aloud. Target-only echoes are unaffected.
+ * The playable frontier: the index of the first sentence still awaiting audio
+ * (`status: 'pending'`). Sentences before it are resolved — `ready` ones are
+ * playable, `failed` ones are skipped but do NOT block. Equals `sentences.length`
+ * when nothing is pending. Playing only this contiguous prefix keeps a story
+ * gap-free: it never skips a sentence whose audio hasn't arrived yet.
+ */
+export function playableThrough(echo: Echo): number {
+  const pending = echo.sentences.findIndex((s) => s.status === 'pending');
+  return pending === -1 ? echo.sentences.length : pending;
+}
+
+/**
+ * The playlist to actually play: the contiguous non-pending prefix (see
+ * {@link playableThrough}). When a bilingual echo has its translation turned
+ * off, the native-language audio is dropped (not just hidden) so it isn't read
+ * aloud. Target-only echoes are unaffected.
  */
 export function playablePlaylist(echo: Echo, includeTranslation: boolean): PlaylistEntry[] {
-  const full = buildPlaylist(echo);
+  const frontier = playableThrough(echo);
+  const prefix: Echo = { ...echo, sentences: echo.sentences.slice(0, frontier) };
+  const full = buildPlaylist(prefix);
   if (echo.params.mode === 'bilingual' && !includeTranslation) {
     return full.filter((e) => e.lang === 'gr');
   }

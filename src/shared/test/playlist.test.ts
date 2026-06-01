@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPlaylist, playablePlaylist } from '../src/playlist.js';
+import { buildPlaylist, playablePlaylist, playableThrough } from '../src/playlist.js';
 import type { Echo } from '../src/types.js';
 
 function echo(overrides: Partial<Echo> = {}): Echo {
@@ -117,5 +117,69 @@ describe('playablePlaylist', () => {
     const l = echo({ params: { ...echo().params, mode: 'target_only' } });
     expect(playablePlaylist(l, false)).toEqual(buildPlaylist(l));
     expect(playablePlaylist(l, true)).toEqual(buildPlaylist(l));
+  });
+});
+
+describe('playableThrough (playable frontier)', () => {
+  it('is the full length when no sentence is pending', () => {
+    expect(playableThrough(echo())).toBe(2);
+  });
+
+  it('stops at the first pending sentence', () => {
+    const e = echo();
+    e.sentences[1]!.status = 'pending';
+    e.sentences[1]!.grUrl = undefined;
+    e.sentences[1]!.nativeUrl = undefined;
+    expect(playableThrough(e)).toBe(1);
+  });
+
+  it('is 0 when the first sentence is still pending', () => {
+    const e = echo();
+    e.sentences[0]!.status = 'pending';
+    expect(playableThrough(e)).toBe(0);
+  });
+
+  it('does not block on a failed sentence', () => {
+    const e = echo();
+    e.sentences[0]!.status = 'failed';
+    e.sentences[0]!.grUrl = undefined;
+    e.sentences[0]!.nativeUrl = undefined;
+    expect(playableThrough(e)).toBe(2);
+  });
+});
+
+describe('playablePlaylist with a partial echo', () => {
+  it('includes only the contiguous ready prefix (stops at a pending sentence)', () => {
+    const e = echo();
+    e.totalSentences = 3;
+    e.sentences.push({ i: 2, gr: 'x', native: 'y', status: 'pending' });
+    const entries = playablePlaylist(e, true);
+    expect(entries.every((x) => x.sentenceIndex < 2)).toBe(true);
+    expect(entries).toHaveLength(4); // sentences 0 + 1, target+native each
+  });
+
+  it('stops at a gap even if a later sentence is ready', () => {
+    const e = echo();
+    e.totalSentences = 3;
+    e.sentences[1]!.status = 'pending';
+    e.sentences[1]!.grUrl = undefined;
+    e.sentences[1]!.nativeUrl = undefined;
+    e.sentences.push({
+      i: 2, gr: 'g2', native: 'n2', status: 'ready',
+      grUrl: 'https://e/gr/2.mp3', nativeUrl: 'https://e/native/2.mp3',
+      grDurSec: 1, nativeDurSec: 1,
+    });
+    const entries = playablePlaylist(e, true);
+    expect(entries.every((x) => x.sentenceIndex === 0)).toBe(true);
+  });
+
+  it('skips a failed sentence without blocking the prefix', () => {
+    const e = echo();
+    e.sentences[0]!.status = 'failed';
+    e.sentences[0]!.grUrl = undefined;
+    e.sentences[0]!.nativeUrl = undefined;
+    const entries = playablePlaylist(e, true);
+    expect(entries.every((x) => x.sentenceIndex === 1)).toBe(true);
+    expect(entries).toHaveLength(2);
   });
 });
