@@ -47,6 +47,7 @@ export interface PlayerState {
   currentChunk: number;
   currentSentence: number;
   speed: number;
+  buffering: boolean;
 }
 
 export interface PlayerControls {
@@ -60,7 +61,7 @@ export interface PlayerControls {
   setSpeed(rate: number): void;
 }
 
-export function usePlayer(playlist: PlaylistEntry[], echoId?: string): {
+export function usePlayer(playlist: PlaylistEntry[], echoId?: string, generating = false): {
   audioRef: React.RefObject<HTMLAudioElement | null>;
   state: PlayerState;
   controls: PlayerControls;
@@ -68,12 +69,14 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string): {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentChunk, setCurrentChunk] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [buffering, setBuffering] = useState(false);
   const [speed, setSpeedState] = useState(() => (typeof window !== 'undefined' ? loadSpeed() : 1));
 
-  const currentSentence = useMemo(
-    () => playlist[currentChunk]?.sentenceIndex ?? 0,
-    [playlist, currentChunk],
-  );
+  const currentSentence = useMemo(() => {
+    if (playlist.length === 0) return 0;
+    const entry = playlist[currentChunk] ?? playlist[playlist.length - 1]!;
+    return entry.sentenceIndex;
+  }, [playlist, currentChunk]);
 
   // When the playlist is rebuilt mid-playback (e.g. toggling translation adds or
   // drops the native chunks), the raw currentChunk index no longer points at the
@@ -134,11 +137,17 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string): {
     const audio = audioRef.current;
     if (!audio) return;
     if (currentChunk >= playlist.length) {
-      setIsPlaying(false);
+      // Played everything available. If sentences are still being generated, hold
+      // intent-to-play and surface "buffering" — this effect re-runs when the
+      // playlist grows (frontier advances) and resumes from the new chunk.
+      // Otherwise we've reached the true end: stop.
+      if (generating) setBuffering(true);
+      else setIsPlaying(false);
       return;
     }
+    setBuffering(false);
     void audio.play().catch(() => setIsPlaying(false));
-  }, [currentChunk, isPlaying, playlist.length]);
+  }, [currentChunk, isPlaying, playlist.length, generating]);
 
   const play = useCallback(() => {
     const audio = audioRef.current;
@@ -150,6 +159,7 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string): {
   const pause = useCallback(() => {
     audioRef.current?.pause();
     setIsPlaying(false);
+    setBuffering(false);
   }, []);
 
   const toggle = useCallback(() => {
@@ -252,7 +262,7 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string): {
 
   return {
     audioRef,
-    state: { isPlaying, currentChunk, currentSentence, speed },
+    state: { isPlaying, currentChunk, currentSentence, speed, buffering },
     controls: { play, pause, toggle, next, prev, repeatSentence, jumpToSentence, setSpeed },
   };
 }
