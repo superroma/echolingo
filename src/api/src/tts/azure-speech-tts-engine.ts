@@ -82,6 +82,43 @@ export function localeFor(lang: TtsLang): string {
   return LANG_LOCALE[lang];
 }
 
+/**
+ * Per-language speaking-rate nudge. Some locales' default neural voices read
+ * noticeably faster than en-US (Greek's Athina especially); for a listening-
+ * first learner we slow them a touch. The value is an SSML prosody `rate`
+ * (relative %, so '-12%' = 12% slower). Languages absent from this map use the
+ * plain, unmodified synthesis path — tune the pace by editing one line here.
+ *
+ * Rate control requires SSML, and SSML requires an explicit `<voice name>` —
+ * the locale-default-voice trick only works for plain `speakTextAsync`. So each
+ * adjusted language also pins its locale's DEFAULT neural voice (the same
+ * speaker Azure would otherwise pick), changing only the pace, never the voice.
+ */
+export const LANG_RATE: Partial<Record<TtsLang, { voice: string; rate: string }>> = {
+  el: { voice: 'el-GR-AthinaNeural', rate: '-12%' },
+};
+
+const SSML_NS = 'http://www.w3.org/2001/10/synthesis';
+
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/** Wrap text in SSML that pins voice + locale and applies a prosody rate. */
+export function buildRateSsml(opts: { locale: string; voice: string; rate: string; text: string }): string {
+  return (
+    `<speak version="1.0" xmlns="${SSML_NS}" xml:lang="${opts.locale}">` +
+    `<voice name="${opts.voice}">` +
+    `<prosody rate="${opts.rate}">${escapeXml(opts.text)}</prosody>` +
+    `</voice></speak>`
+  );
+}
+
 export interface AzureSpeechEngineOptions {
   region: string;
   /** Full ARM resource id of the Speech resource (for the aad# auth token). */
@@ -104,9 +141,13 @@ export class AzureSpeechTtsEngine implements TtsEngine {
     const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(authToken, this.opts.region);
     speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio24Khz48KBitRateMonoMp3;
 
-    const voice = req.voice ?? this.opts.voice;
-    if (voice) {
-      speechConfig.speechSynthesisVoiceName = voice;
+    const overrideVoice = req.voice ?? this.opts.voice;
+    const adjust = LANG_RATE[req.lang];
+    if (adjust) {
+      // SSML carries its own <voice>, so speechConfig voice/lang are ignored;
+      // the override (if any) still wins as the voice named inside the SSML.
+    } else if (overrideVoice) {
+      speechConfig.speechSynthesisVoiceName = overrideVoice;
     } else {
       // No voice name → Azure uses the locale's default neural voice (consistent).
       speechConfig.speechSynthesisLanguage = localeFor(req.lang);
@@ -115,7 +156,17 @@ export class AzureSpeechTtsEngine implements TtsEngine {
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
     try {
       const result = await new Promise<sdk.SpeechSynthesisResult>((resolve, reject) => {
-        synthesizer.speakTextAsync(req.text, resolve, reject);
+        if (adjust) {
+          const ssml = buildRateSsml({
+            locale: localeFor(req.lang),
+            voice: overrideVoice ?? adjust.voice,
+            rate: adjust.rate,
+            text: req.text,
+          });
+          synthesizer.speakSsmlAsync(ssml, resolve, reject);
+        } else {
+          synthesizer.speakTextAsync(req.text, resolve, reject);
+        }
       });
       if (result.reason !== sdk.ResultReason.SynthesizingAudioCompleted) {
         const detail =
