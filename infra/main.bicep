@@ -9,10 +9,13 @@ param environmentName string
 @description('Primary location for all resources.')
 param location string
 
-@description('Location for Azure OpenAI (some models have regional availability; Sweden Central has both gpt-5.x-mini and tts).')
+@description('Location for the Azure OpenAI LLM account (gpt-5.x-mini has regional availability; Sweden Central has it).')
 param openAiLocation string = 'swedencentral'
 
-@description('Object id of the principal deploying — granted Cognitive Services OpenAI User on the AOAI resource for local dev.')
+@description('Location for the Azure OpenAI TTS account. gpt-4o-mini-tts is not offered in Sweden Central, so TTS lives in its own account/region (East US 2 has quota).')
+param ttsLocation string = 'eastus2'
+
+@description('Object id of the principal deploying — granted Cognitive Services OpenAI User on the AOAI resources for local dev.')
 param principalId string = ''
 
 @description('Azure OpenAI LLM model name (deployment name will match).')
@@ -22,13 +25,16 @@ param llmModelName string = 'gpt-5.4-mini'
 param llmModelVersion string = '2026-03-17'
 
 @description('Azure OpenAI TTS model name (deployment name will match).')
-param ttsModelName string = 'tts'
+param ttsModelName string = 'gpt-4o-mini-tts'
 
 @description('Azure OpenAI TTS model version snapshot.')
-param ttsModelVersion string = '001'
+param ttsModelVersion string = '2025-12-15'
 
-@description('Quota in thousand tokens per minute for each deployment.')
+@description('Quota in thousand tokens per minute for the LLM deployment.')
 param deploymentQuotaTpm int = 150
+
+@description('Quota in thousand tokens per minute for the TTS deployment.')
+param ttsQuotaTpm int = 50
 
 @description('Apex domain hosted in Azure DNS for the public site. Empty disables the DNS zone.')
 param domainName string = 'echolingo.audio'
@@ -66,18 +72,43 @@ module storage './modules/storage.bicep' = {
   }
 }
 
+// LLM account (gpt-5.x-mini) — Sweden Central.
 module openai './modules/openai.bicep' = {
   scope: rg
   name: 'openai'
   params: {
-    environmentName: environmentName
     location: openAiLocation
     tags: tags
-    llmModelName: llmModelName
-    llmModelVersion: llmModelVersion
-    ttsModelName: ttsModelName
-    ttsModelVersion: ttsModelVersion
-    quotaTpm: deploymentQuotaTpm
+    accountName: 'aoai-echolingo-${environmentName}'
+    deployments: [
+      {
+        name: llmModelName
+        version: llmModelVersion
+        skuName: 'GlobalStandard'
+        capacity: deploymentQuotaTpm
+      }
+    ]
+    principalId: principalId
+  }
+}
+
+// TTS account (gpt-4o-mini-tts) — separate region (East US 2) because the model
+// isn't offered in the LLM region. Its own endpoint is wired into the API.
+module openaiTts './modules/openai.bicep' = {
+  scope: rg
+  name: 'openaiTts'
+  params: {
+    location: ttsLocation
+    tags: tags
+    accountName: 'aoai-tts-echolingo-${environmentName}'
+    deployments: [
+      {
+        name: ttsModelName
+        version: ttsModelVersion
+        skuName: 'GlobalStandard'
+        capacity: ttsQuotaTpm
+      }
+    ]
     principalId: principalId
   }
 }
@@ -99,8 +130,9 @@ module functionApp './modules/function-app.bicep' = {
     scriptGenQueue: storage.outputs.scriptGenQueue
     ttsSentenceQueue: storage.outputs.ttsSentenceQueue
     openAiEndpoint: openai.outputs.endpoint
-    openAiLlmDeployment: openai.outputs.llmDeployment
-    openAiTtsDeployment: openai.outputs.ttsDeployment
+    openAiLlmDeployment: llmModelName
+    openAiTtsEndpoint: openaiTts.outputs.endpoint
+    openAiTtsDeployment: ttsModelName
   }
 }
 
@@ -111,6 +143,7 @@ module roleAssignments './modules/role-assignments.bicep' = {
     functionAppPrincipalId: functionApp.outputs.principalId
     storageAccountName: storage.outputs.storageAccountName
     openAiAccountName: openai.outputs.accountName
+    openAiTtsAccountName: openaiTts.outputs.accountName
     deployerPrincipalId: principalId
   }
 }
@@ -155,8 +188,9 @@ module customDomain './modules/custom-domain.bicep' = if (!empty(domainName)) {
 output AZURE_LOCATION string = location
 output AZURE_ENVIRONMENT_NAME string = environmentName
 output AZURE_OPENAI_ENDPOINT string = openai.outputs.endpoint
-output AZURE_OPENAI_LLM_DEPLOYMENT string = openai.outputs.llmDeployment
-output AZURE_OPENAI_TTS_DEPLOYMENT string = openai.outputs.ttsDeployment
+output AZURE_OPENAI_LLM_DEPLOYMENT string = llmModelName
+output AZURE_OPENAI_TTS_ENDPOINT string = openaiTts.outputs.endpoint
+output AZURE_OPENAI_TTS_DEPLOYMENT string = ttsModelName
 output AZURE_STORAGE_ACCOUNT_NAME string = storage.outputs.storageAccountName
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.appInsightsConnectionString
 output FUNCTION_APP_NAME string = functionApp.outputs.functionAppName

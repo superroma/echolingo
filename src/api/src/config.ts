@@ -20,6 +20,10 @@ export interface OpenAiAzureConfig {
   apiVersion: string;
   llmDeployment: string;
   ttsDeployment: string;
+  // TTS lives in its own AOAI account/region (gpt-4o-mini-tts isn't offered in
+  // the LLM region). Falls back to the LLM endpoint/apiVersion when unset.
+  ttsEndpoint?: string;
+  ttsApiVersion?: string;
 }
 
 export type OpenAiConfig = OpenAiDirectConfig | OpenAiAzureConfig;
@@ -87,14 +91,16 @@ export function loadConfig(): Config {
       endpoint: azureOpenAiEndpoint,
       apiVersion: process.env.AZURE_OPENAI_API_VERSION ?? '2024-10-21',
       llmDeployment: process.env.AZURE_OPENAI_LLM_DEPLOYMENT ?? 'gpt-5.4-mini',
-      ttsDeployment: process.env.AZURE_OPENAI_TTS_DEPLOYMENT ?? 'tts',
+      ttsDeployment: process.env.AZURE_OPENAI_TTS_DEPLOYMENT ?? 'gpt-4o-mini-tts',
+      ttsEndpoint: process.env.AZURE_OPENAI_TTS_ENDPOINT,
+      ttsApiVersion: process.env.AZURE_OPENAI_TTS_API_VERSION,
     };
   } else if (openaiKey) {
     openai = {
       kind: 'direct',
       apiKey: openaiKey,
       llmModel: process.env.OPENAI_LLM_MODEL ?? 'gpt-4o-mini',
-      ttsModel: process.env.OPENAI_TTS_MODEL ?? 'tts-1',
+      ttsModel: process.env.OPENAI_TTS_MODEL ?? 'gpt-4o-mini-tts',
     };
   }
 

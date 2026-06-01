@@ -1,34 +1,20 @@
-@description('azd environment name.')
-param environmentName string
-
-@description('Location for AOAI (e.g. westeurope).')
+@description('Location for this Azure OpenAI account (model availability is regional).')
 param location string
 
 @description('Tags.')
 param tags object
 
-@description('LLM model name; deployment name will match.')
-param llmModelName string
+@description('Cognitive Services account name (also used as the custom subdomain).')
+param accountName string
 
-@description('LLM model version (Azure-managed snapshot).')
-param llmModelVersion string = '2026-03-17'
+@description('Model deployments for this account: array of { name, version, skuName, capacity }. The deployment name matches the model name.')
+param deployments array
 
-@description('TTS model name; deployment name will match.')
-param ttsModelName string
+@description('Object id of a user principal granted Cognitive Services OpenAI User (local dev). Empty in CI deploys.')
+param principalId string = ''
 
-@description('TTS model version.')
-param ttsModelVersion string = '001'
-
-@description('Quota per deployment in thousand tokens per minute.')
-param quotaTpm int
-
-@description('Object id of the local developer principal — receives Cognitive Services OpenAI User. Empty in CI deploys.')
-param principalId string
-
-var accountName = 'aoai-echolingo-${environmentName}'
-
-module openai 'br/public:avm/res/cognitive-services/account:0.9.1' = {
-  name: 'aoai-${environmentName}'
+module account 'br/public:avm/res/cognitive-services/account:0.9.1' = {
+  name: 'aoai-${accountName}'
   params: {
     name: accountName
     location: location
@@ -39,29 +25,16 @@ module openai 'br/public:avm/res/cognitive-services/account:0.9.1' = {
     disableLocalAuth: true
     publicNetworkAccess: 'Enabled'
     deployments: [
-      {
-        name: llmModelName
+      for d in deployments: {
+        name: d.name
         model: {
           format: 'OpenAI'
-          name: llmModelName
-          version: llmModelVersion
+          name: d.name
+          version: d.version
         }
         sku: {
-          name: 'GlobalStandard'
-          capacity: quotaTpm
-        }
-        versionUpgradeOption: 'OnceCurrentVersionExpired'
-      }
-      {
-        name: ttsModelName
-        model: {
-          format: 'OpenAI'
-          name: ttsModelName
-          version: ttsModelVersion
-        }
-        sku: {
-          name: 'Standard'
-          capacity: 3
+          name: d.skuName
+          capacity: d.capacity
         }
         versionUpgradeOption: 'OnceCurrentVersionExpired'
       }
@@ -76,8 +49,6 @@ module openai 'br/public:avm/res/cognitive-services/account:0.9.1' = {
   }
 }
 
-output endpoint string = openai.outputs.endpoint
-output accountName string = openai.outputs.name
-output accountResourceId string = openai.outputs.resourceId
-output llmDeployment string = llmModelName
-output ttsDeployment string = ttsModelName
+output endpoint string = account.outputs.endpoint
+output accountName string = account.outputs.name
+output accountResourceId string = account.outputs.resourceId

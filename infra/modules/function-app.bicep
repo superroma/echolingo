@@ -34,14 +34,20 @@ param scriptGenQueue string
 @description('TTS-sentence queue name.')
 param ttsSentenceQueue string
 
-@description('Azure OpenAI endpoint.')
+@description('Azure OpenAI endpoint (LLM account).')
 param openAiEndpoint string
 
 @description('LLM deployment name.')
 param openAiLlmDeployment string
 
+@description('Azure OpenAI endpoint for the TTS account (separate region).')
+param openAiTtsEndpoint string
+
 @description('TTS deployment name.')
 param openAiTtsDeployment string
+
+@description('API version for the TTS (/audio/speech) endpoint — gpt-4o-mini-tts + instructions need a 2025 preview.')
+param openAiTtsApiVersion string = '2025-04-01-preview'
 
 var planName = 'plan-echolingo-${environmentName}'
 var functionAppName = 'func-echolingo-${environmentName}'
@@ -109,8 +115,10 @@ module functionApp 'br/public:avm/res/web/site:0.13.0' = {
       STORAGE_QUEUE_ENDPOINT: storageQueueEndpoint
       AZURE_OPENAI_ENDPOINT: openAiEndpoint
       AZURE_OPENAI_LLM_DEPLOYMENT: openAiLlmDeployment
+      AZURE_OPENAI_TTS_ENDPOINT: openAiTtsEndpoint
       AZURE_OPENAI_TTS_DEPLOYMENT: openAiTtsDeployment
       AZURE_OPENAI_API_VERSION: '2024-08-01-preview'
+      AZURE_OPENAI_TTS_API_VERSION: openAiTtsApiVersion
       LLM_ENGINE: 'openai'
       TTS_ENGINE: 'openai'
       RATE_LIMIT_PER_DAY: '20'

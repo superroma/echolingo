@@ -70,8 +70,9 @@ function buildTts(config: Config): TtsEngine {
     return new OpenAiTtsEngine({
       auth: {
         kind: 'azure',
-        endpoint: config.openai.endpoint,
-        apiVersion: config.openai.apiVersion,
+        // TTS may live in its own AOAI account/region; fall back to the LLM one.
+        endpoint: config.openai.ttsEndpoint ?? config.openai.endpoint,
+        apiVersion: config.openai.ttsApiVersion ?? config.openai.apiVersion,
         azureADTokenProvider: azureTokenProvider(),
       },
       model: config.openai.ttsDeployment,

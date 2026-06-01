@@ -4,8 +4,11 @@ param functionAppPrincipalId string
 @description('Storage account name.')
 param storageAccountName string
 
-@description('Azure OpenAI account name.')
+@description('Azure OpenAI account name (LLM).')
 param openAiAccountName string
+
+@description('Azure OpenAI account name (TTS, separate region).')
+param openAiTtsAccountName string
 
 @description('Object id of the principal running azd deploy — receives Storage Blob Data Contributor for package uploads. Empty in CI deploys (where the SP needs its own role).')
 param deployerPrincipalId string = ''
@@ -16,6 +19,10 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
 
 resource openAi 'Microsoft.CognitiveServices/accounts@2024-10-01' existing = {
   name: openAiAccountName
+}
+
+resource openAiTts 'Microsoft.CognitiveServices/accounts@2024-10-01' existing = {
+  name: openAiTtsAccountName
 }
 
 var blobDataContributor    = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
@@ -56,6 +63,16 @@ resource roleStorageTable 'Microsoft.Authorization/roleAssignments@2022-04-01' =
 resource roleOpenAi 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: openAi
   name: guid(openAi.id, functionAppPrincipalId, openAiUser)
+  properties: {
+    principalId: functionAppPrincipalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', openAiUser)
+  }
+}
+
+resource roleOpenAiTts 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: openAiTts
+  name: guid(openAiTts.id, functionAppPrincipalId, openAiUser)
   properties: {
     principalId: functionAppPrincipalId
     principalType: 'ServicePrincipal'

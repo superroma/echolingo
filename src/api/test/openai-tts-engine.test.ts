@@ -57,6 +57,30 @@ describe('OpenAiTtsEngine', () => {
     expect(captured.body?.voice).toBe('shimmer');
   });
 
+  it('adds language-steering instructions for gpt-4o-mini-tts, omits for classic tts', async () => {
+    const captured: { body: { instructions?: string } | null } = { body: null };
+    server.use(
+      http.post('https://api.openai.com/v1/audio/speech', async ({ request }) => {
+        captured.body = (await request.json()) as typeof captured.body;
+        return new HttpResponse(MP3, { status: 200 });
+      }),
+    );
+    const mini = new OpenAiTtsEngine({
+      auth: { kind: 'direct', apiKey: 'sk-test' },
+      model: 'gpt-4o-mini-tts',
+    });
+    await mini.synthesize({ text: 'Καλημέρα.', lang: 'el' });
+    expect(captured.body?.instructions).toMatch(/Greek/);
+
+    captured.body = null;
+    const legacy = new OpenAiTtsEngine({
+      auth: { kind: 'direct', apiKey: 'sk-test' },
+      model: 'tts-1',
+    });
+    await legacy.synthesize({ text: 'Hi', lang: 'en' });
+    expect(captured.body?.instructions).toBeUndefined();
+  });
+
   it('retries on 5xx and succeeds', async () => {
     let calls = 0;
     server.use(

@@ -79,7 +79,7 @@ describe('loadConfig — engine selection', () => {
     if (cfg.openai?.kind === 'azure') {
       expect(cfg.openai.endpoint).toBe('https://aoai-test.openai.azure.com');
       expect(cfg.openai.llmDeployment).toBe('gpt-5.4-mini');
-      expect(cfg.openai.ttsDeployment).toBe('tts');
+      expect(cfg.openai.ttsDeployment).toBe('gpt-4o-mini-tts');
     }
   });
 
