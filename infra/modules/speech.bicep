@@ -7,8 +7,11 @@ param tags object
 @description('azd environment name.')
 param environmentName string
 
-@description('Object id of a user principal granted Cognitive Services Speech User (local dev). Empty in CI deploys.')
+@description('Object id of the deploying principal, granted Cognitive Services Speech User. Empty skips the grant.')
 param principalId string = ''
+
+@description('Principal type of principalId: User for local azd up, ServicePrincipal for CI.')
+param principalType string = 'User'
 
 var accountName = 'spch-echolingo-${environmentName}'
 
@@ -30,7 +33,7 @@ module speech 'br/public:avm/res/cognitive-services/account:0.9.1' = {
       {
         principalId: principalId
         roleDefinitionIdOrName: 'Cognitive Services Speech User'
-        principalType: 'User'
+        principalType: principalType
       }
     ]
   }

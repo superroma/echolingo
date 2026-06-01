@@ -15,8 +15,11 @@ param openAiLocation string = 'swedencentral'
 @description('Location for the Azure OpenAI TTS account. gpt-4o-mini-tts is not offered in Sweden Central, so TTS lives in its own account/region (East US 2 has quota).')
 param ttsLocation string = 'eastus2'
 
-@description('Object id of the principal deploying — granted Cognitive Services OpenAI User on the AOAI resources for local dev.')
+@description('Object id of the principal deploying — granted data-plane roles (OpenAI/Speech/Storage) on the resources. azd auto-populates this with the current principal.')
 param principalId string = ''
+
+@description('Principal type of principalId. User for a local azd up; ServicePrincipal for CI (the GitHub Actions identity). ARM rejects a role assignment whose declared type mismatches the principal.')
+param principalType string = 'User'
 
 @description('Azure OpenAI LLM model name (deployment name will match).')
 param llmModelName string = 'gpt-5.4-mini'
@@ -114,6 +117,7 @@ module openai './modules/openai.bicep' = {
       }
     ]
     principalId: principalId
+    principalType: principalType
   }
 }
 
@@ -135,6 +139,7 @@ module openaiTts './modules/openai.bicep' = {
       }
     ]
     principalId: principalId
+    principalType: principalType
   }
 }
 
@@ -147,6 +152,7 @@ module speech './modules/speech.bicep' = {
     location: speechLocation
     tags: tags
     principalId: principalId
+    principalType: principalType
   }
 }
 
@@ -186,6 +192,7 @@ module roleAssignments './modules/role-assignments.bicep' = {
     openAiTtsAccountName: openaiTts.outputs.accountName
     speechAccountName: speech.outputs.accountName
     deployerPrincipalId: principalId
+    deployerPrincipalType: principalType
   }
 }
 

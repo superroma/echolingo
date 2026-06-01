@@ -10,8 +10,11 @@ param accountName string
 @description('Model deployments for this account: array of { name, version, skuName, capacity }. The deployment name matches the model name.')
 param deployments array
 
-@description('Object id of a user principal granted Cognitive Services OpenAI User (local dev). Empty in CI deploys.')
+@description('Object id of the deploying principal, granted Cognitive Services OpenAI User. Empty skips the grant.')
 param principalId string = ''
+
+@description('Principal type of principalId: User for local azd up, ServicePrincipal for CI.')
+param principalType string = 'User'
 
 module account 'br/public:avm/res/cognitive-services/account:0.9.1' = {
   name: 'aoai-${accountName}'
@@ -43,7 +46,7 @@ module account 'br/public:avm/res/cognitive-services/account:0.9.1' = {
       {
         principalId: principalId
         roleDefinitionIdOrName: 'Cognitive Services OpenAI User'
-        principalType: 'User'
+        principalType: principalType
       }
     ]
   }

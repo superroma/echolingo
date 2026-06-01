@@ -13,8 +13,11 @@ param openAiTtsAccountName string
 @description('Azure AI Speech account name.')
 param speechAccountName string
 
-@description('Object id of the principal running azd deploy — receives Storage Blob Data Contributor for package uploads. Empty in CI deploys (where the SP needs its own role).')
+@description('Object id of the principal running azd deploy — receives Storage Blob Data Contributor for package uploads. Empty skips the grant.')
 param deployerPrincipalId string = ''
+
+@description('Principal type of deployerPrincipalId: User for local azd up, ServicePrincipal for CI.')
+param deployerPrincipalType string = 'User'
 
 resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
   name: storageAccountName
@@ -103,7 +106,7 @@ resource roleDeployerStorageBlob 'Microsoft.Authorization/roleAssignments@2022-0
   name: guid(storage.id, deployerPrincipalId, blobDataContributor)
   properties: {
     principalId: deployerPrincipalId
-    principalType: 'User'
+    principalType: deployerPrincipalType
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', blobDataContributor)
   }
 }

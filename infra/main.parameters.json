@@ -10,6 +10,7 @@
     "openAiLocation": { "value": "${AZURE_OPENAI_LOCATION=swedencentral}" },
     "ttsLocation": { "value": "${AZURE_OPENAI_TTS_LOCATION=eastus2}" },
     "principalId": { "value": "${AZURE_PRINCIPAL_ID}" },
+    "principalType": { "value": "${AZURE_PRINCIPAL_TYPE=User}" },
     "llmModelName": { "value": "${LLM_MODEL_NAME=gpt-5.4-mini}" },
     "llmModelVersion": { "value": "${LLM_MODEL_VERSION=2026-03-17}" },
     "ttsModelName": { "value": "${TTS_MODEL_NAME=gpt-4o-mini-tts}" },

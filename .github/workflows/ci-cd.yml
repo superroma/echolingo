@@ -49,6 +49,9 @@ jobs:
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       AZURE_LOCATION: westeurope
+      # The deploy identity is a service principal; the deployer data-plane role
+      # grants must declare that type (ARM rejects a 'User' grant for an SP).
+      AZURE_PRINCIPAL_TYPE: ServicePrincipal
     steps:
       - name: Select environment by branch
         run: |
