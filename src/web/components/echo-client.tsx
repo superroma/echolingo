@@ -19,6 +19,10 @@ import {
 } from '../hooks/playlist-math';
 import { echoId } from '@echolingo/shared';
 import { createEcho, type CreateEchoResult } from '../lib/api';
+import { usePrefetch } from '../hooks/use-prefetch';
+import { statusLine } from '../lib/echo-status';
+import { persistStorage, clearEchoAudio } from '../lib/audio-cache';
+import { clearEcho } from '../lib/offline-echo';
 
 export function EchoClient({ id }: { id: string }) {
   return <ExistingEcho id={id} />;
@@ -152,13 +156,29 @@ function ExistingEcho({ id }: { id: string }) {
 
   const bilingual = state.kind === 'ok' && state.echo.params.mode === 'bilingual';
 
-  // When translation is hidden, also drop the native audio so it isn't played
-  // aloud — not just hidden in the transcript.
+  // The playable prefix grows as sentences finish generating; empty until the
+  // first sentence's audio lands.
   const playlist = useMemo(() => {
-    if (!(state.kind === 'ok' && state.echo.status === 'ready')) return [];
+    if (state.kind !== 'ok') return [];
     return playablePlaylist(state.echo, showTranslation);
   }, [state, showTranslation]);
-  const player = usePlayer(playlist, id);
+
+  const generating =
+    state.kind === 'ok' &&
+    (state.echo.status === 'generating_script' || state.echo.status === 'generating_audio');
+
+  const player = usePlayer(playlist, id, generating);
+
+  const { allCached } = usePrefetch(state.kind === 'ok' ? state.echo : null);
+
+  // Ask for persistent storage once there's audio worth keeping.
+  const persistedRef = useRef(false);
+  useEffect(() => {
+    if (!persistedRef.current && playlist.length > 0) {
+      persistedRef.current = true;
+      void persistStorage();
+    }
+  }, [playlist.length]);
 
   // Toggling translation rebuilds the playlist (native chunks added/removed).
   // The player remaps the in-flight chunk across the rebuild, so the current
@@ -181,7 +201,10 @@ function ExistingEcho({ id }: { id: string }) {
 
   const cum = useMemo(() => cumulativeDurations(playlist), [playlist]);
   const total = useMemo(() => totalDuration(playlist), [playlist]);
-  const elapsedSec = (cum[player.state.currentChunk] ?? 0) + audioCurrentTime;
+  // While buffering, currentChunk parks one past the end; clamp so elapsed/total
+  // doesn't snap back to zero.
+  const safeChunk = Math.min(player.state.currentChunk, Math.max(0, playlist.length - 1));
+  const elapsedSec = (cum[safeChunk] ?? 0) + audioCurrentTime;
 
   function onSeek(sec: number) {
     const target = chunkAtElapsed(playlist, sec);
@@ -240,6 +263,16 @@ function ExistingEcho({ id }: { id: string }) {
       return;
     }
     setRetrying({ kind: 'network_error', message: result.message });
+  }
+
+  async function reloadEcho() {
+    try {
+      await clearEchoAudio(id);
+    } catch {
+      // cache may be unavailable; clearing the JSON + re-poll still recovers
+    }
+    clearEcho(id);
+    setReloadToken((t) => t + 1);
   }
 
   const headerTitle = state.kind === 'ok' ? state.echo.params.topic : 'echo';
@@ -339,7 +372,8 @@ function ExistingEcho({ id }: { id: string }) {
 
   const ready = echo.status === 'ready';
 
-  if (!ready) {
+  // Script not written yet — keep the composing spinner; there's no text to show.
+  if (echo.status === 'generating_script') {
     return (
       <PageFrame title={echo.params.topic}>
         <EchoProgress echo={echo} />
@@ -374,6 +408,12 @@ function ExistingEcho({ id }: { id: string }) {
             bilingual={bilingual}
             showTranslation={showTranslation}
             onToggleTranslation={toggleTranslation}
+            status={statusLine(echo)}
+            buffering={player.state.buffering}
+            offlineSaved={allCached}
+            canPlay={playlist.length > 0}
+            ready={ready}
+            onReload={() => void reloadEcho()}
           />
         </div>
       </div>
