@@ -1,7 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { PlaylistEntry } from '@echolingo/shared/types';
+
+// useLayoutEffect on the client (runs before the passive src effect, so a
+// playlist swap is remapped before any stale reload), useEffect on the server
+// (avoids the SSR warning during static export).
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 const SPEED_KEY = 'echo:speed';
 export const posKey = (id: string) => `echo:pos:${id}`;
@@ -69,6 +74,30 @@ export function usePlayer(playlist: PlaylistEntry[], echoId?: string): {
     () => playlist[currentChunk]?.sentenceIndex ?? 0,
     [playlist, currentChunk],
   );
+
+  // When the playlist is rebuilt mid-playback (e.g. toggling translation adds or
+  // drops the native chunks), the raw currentChunk index no longer points at the
+  // same audio. Remap it to the chunk that's actually playing — same URL, so the
+  // src effect below won't reload — letting the current sentence finish instead
+  // of restarting. This runs before the passive src effect, so the stale index
+  // never triggers a reload. If the playing chunk was removed (translation turned
+  // off while its translation was playing), advance to the next sentence.
+  const prevPlaylistRef = useRef(playlist);
+  useIsomorphicLayoutEffect(() => {
+    const prev = prevPlaylistRef.current;
+    if (prev === playlist) return;
+    prevPlaylistRef.current = playlist;
+    const playing = prev[currentChunk];
+    if (!playing || playlist.length === 0) return;
+    let idx = playlist.findIndex(
+      (e) => e.sentenceIndex === playing.sentenceIndex && e.lang === playing.lang,
+    );
+    if (idx < 0) {
+      idx = playlist.findIndex((e) => e.sentenceIndex > playing.sentenceIndex);
+      if (idx < 0) idx = playlist.length - 1;
+    }
+    if (idx !== currentChunk) setCurrentChunk(idx);
+  }, [playlist, currentChunk]);
 
   useEffect(() => {
     const audio = audioRef.current;

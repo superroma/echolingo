@@ -160,20 +160,13 @@ function ExistingEcho({ id }: { id: string }) {
   }, [state, showTranslation]);
   const player = usePlayer(playlist, id);
 
-  // Toggling translation rebuilds the playlist (entries shift). Capture the
-  // sentence at click time and re-anchor to it once the new playlist is in,
-  // so playback stays on the same line instead of jumping by raw index.
-  const anchorSentenceRef = useRef<number | null>(null);
+  // Toggling translation rebuilds the playlist (native chunks added/removed).
+  // The player remaps the in-flight chunk across the rebuild, so the current
+  // sentence keeps playing to its end and the new setting takes effect from the
+  // chunk after it — no restart needed here.
   function toggleTranslation() {
-    anchorSentenceRef.current = player.state.currentSentence;
     setShowTranslation((v) => !v);
   }
-  useEffect(() => {
-    if (anchorSentenceRef.current === null) return;
-    const target = anchorSentenceRef.current;
-    anchorSentenceRef.current = null;
-    player.controls.jumpToSentence(target);
-  }, [playlist, player.controls]);
 
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   useEffect(() => {
